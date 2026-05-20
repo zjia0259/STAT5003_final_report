@@ -992,6 +992,8 @@ After preprocessing: **`r nrow(train_3)`** training samples, **`r nrow(test_3)`*
 
 We evaluate five classification models spanning a complexity spectrum: Naive Bayes (probabilistic baseline), Multinomial Logistic Regression (linear baseline), Random Forest and Gradient Boosting (ensemble methods), and a Deep Neural Network (DNN). All models use the same shared train/test split and are evaluated with identical metrics. Each model employs a tailored strategy for class imbalance. Model training and tuning were pre-computed via `run_all_models.R`; the final-model training code is shown in foldable blocks below and results are loaded from `.rds` files.
 
+The selected models are appropriate for this dataset for different reasons. Logistic Regression provides a simple and interpretable linear baseline after dummy encoding and standardisation. Naive Bayes provides a lightweight probabilistic baseline and is useful for checking whether simple feature patterns are enough for this classification task. Random Forest and Gradient Boosting are suitable because the survey data contains mixed feature types, many transformed predictors, and possible non-linear relationships between work conditions, AI attitudes, and job satisfaction. The DNN is included as a more flexible model that can learn complex patterns from the processed feature matrix. Using models from simple baselines to more flexible methods also helps us test whether extra model complexity improves prediction for this difficult and imbalanced satisfaction classification problem.
+
 ```{r load-results, eval=TRUE}
 ### Load all pre-computed results
 gbm_res <- readRDS("results/gbm_3class.rds")
@@ -1038,7 +1040,7 @@ gbm_pred_3 <- predict(gbm_final_3, newdata = test_3)
 
 **Best parameters:** n.trees = `r gbm_res$best_params$n.trees`, depth = `r gbm_res$best_params$interaction.depth`, shrinkage = `r gbm_res$best_params$shrinkage`, min.node = `r gbm_res$best_params$n.minobsinnode`. **Imbalance strategy:** sqrt case weights.
 
-```{r gbm-cm, eval=TRUE, fig.height=2.8}
+```{r gbm-cm, eval=TRUE, fig.height=2, fig.align="center"}
 plot_cm(gbm_res$confusion_matrix, "GBM — Confusion Matrix (Test Set)")
 ```
 
@@ -1086,7 +1088,7 @@ dnn_final_model <- dnn_model %>%
 
 **Best parameters:** lr = `r dnn_res$best_params$lr`, dropout = `r dnn_res$best_params$dropout`, hidden = `r dnn_res$best_params$hidden`. **Imbalance strategy:** Focal Loss (gamma=2) + Neutral ×1.5 boost.
 
-```{r dnn-cm, eval=TRUE, fig.height=2.8}
+```{r dnn-cm, eval=TRUE, fig.height=2, fig.align="center"}
 plot_cm(dnn_res$confusion_matrix, "DNN — Confusion Matrix (Test Set)")
 ```
 
@@ -1117,7 +1119,7 @@ nb_pred_3 <- predict(nb_model_3, newdata = test_nb)
 
 **Best parameters:** laplace = `r nb_res$best_params$laplace`, usekernel = `r nb_res$best_params$usekernel`. **Imbalance strategy:** SMOTE (over_ratio = 0.8).
 
-```{r nb-cm, eval=TRUE, fig.height=2.8}
+```{r nb-cm, eval=TRUE, fig.height=2, fig.align="center"}
 plot_cm(nb_res$confusion_matrix, "Naive Bayes — Confusion Matrix (Test Set)")
 ```
 
@@ -1149,7 +1151,7 @@ rf_pred_3 <- predict(best_rf, newdata = test_3)
 
 **Best parameters:** mtry = `r rf_res$best_params$mtry`, min.node.size = `r rf_res$best_params$min.node.size`, strategy = `r rf_res$best_params$model_id`. **Imbalance strategy:** `r rf_res$best_params$model_id`.
 
-```{r rf-cm, eval=TRUE, fig.height=2.8}
+```{r rf-cm, eval=TRUE, fig.height=2, fig.align="center"}
 plot_cm(rf_res$confusion_matrix, "Random Forest — Confusion Matrix (Test Set)")
 ```
 
@@ -1184,7 +1186,7 @@ lr_pred_3 <- predict(lr_model_3, newdata = x_test_dummy)
 
 **Best parameters:** decay = `r lr_res$best_params$decay`. **Imbalance strategy:** power case weights (0.75).
 
-```{r lr-cm, eval=TRUE, fig.height=2.8}
+```{r lr-cm, eval=TRUE, fig.height=2, fig.align="center"}
 plot_cm(lr_res$confusion_matrix, "Logistic Regression — Confusion Matrix (Test Set)")
 ```
 
