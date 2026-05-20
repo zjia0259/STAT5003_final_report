@@ -1286,3 +1286,222 @@ Based on the evaluation, **Gradient Boosting (GBM)** is selected as the final mo
 4. **Interpretability**: variable importance is readily available via GBM, providing actionable domain insights.
 
 All five models achieve Macro F1 in the 0.44–0.47 range, reflecting the inherent difficulty of predicting subjective job satisfaction from survey features. The relatively narrow performance gap between the simplest useful model (Logistic Regression, `r lr_res$overall_metrics$Macro_F1`) and the best (GBM, `r gbm_res$overall_metrics$Macro_F1`) suggests that the signal-to-noise ratio in the dataset is the primary bottleneck rather than model capacity. Nevertheless, ensemble methods (GBM, RF) consistently outperform linear and probabilistic baselines, and thoughtful imbalance handling — whether via class weights, Focal Loss, or SMOTE — is essential for achieving non-trivial Macro F1 in skewed multi-class settings.
+
+
+# Final Results & Conclusion
+
+## Key Findings: What Predicts Developer Job Satisfaction?
+
+Our 3-class Gradient Boosting Machine (GBM) model, tuned via stratified 3-fold cross-validation with Macro F1 as the primary metric, identified **the most influential predictors of developer job satisfaction** in the Stack Overflow 2025 Developer Survey. The model's variable importance ranking revealed two stories worth telling: an expected one and a surprising one.
+
+### The Expected: Career and Compensation Lead
+
+Unsurprisingly, the strongest predictor is **LeavingScore** — an ordinal feature we engineered from the `NewRole` variable that captures a developer's intention to leave or change careers (importance = 100). Developers who have considered switching careers are, almost by definition, less satisfied with their current jobs. While this overlap between leaving intent and dissatisfaction is a methodological caveat we openly acknowledge, the feature remains the model's strongest signal.
+
+Beyond LeavingScore, the next tier of predictors is more substantive:
+
+- **Salary (log-transformed yearly compensation)** ranks second, but with importance ≈25 — only a quarter of LeavingScore's strength. Money matters, but it is far from the dominant force one might expect.
+- **Employment status (not employed)** and **YearsCode / WorkExp** follow, capturing the role of career stage and stability.
+- **Career Change Thoughts** (a separate `NewRole` category) reinforces that internal doubt is a strong satisfaction signal.
+
+### The Surprise: AI Attitudes Permeate the Top 15
+
+The most distinctive finding of our model is that **five of the top 15 predictors are AI-related**:
+```{r five of the top 15 predictors are AI-related, echo=FALSE, fig.height=4, fig.width=10}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+
+# rename group & distribution
+fi_data <- data.frame(
+  variable = c(
+    "Leaving Intention",
+    "Salary",
+    "Unemployed",
+    "Years Coding",
+    "Work Experience",
+    "Career Change Thoughts",
+    "Feels AI is a Threat",
+    "Work Tools Used",
+    "Tech Purchase Influence",
+    "Personal Tools Used",
+    "Learned via Personal Projects",
+    "Strongly Dislikes AI",
+    "Unsure About AI Threat",
+    "Loves AI",
+    "Highly Distrusts AI"
+  ),
+  importance = c(100, 25, 18, 13, 11, 9, 8, 7, 7, 5, 5, 4, 4, 3, 3),
+  group = c(
+    "Career",       # Leaving Intention
+    "Pay",          # Salary
+    "Career",       # Unemployed
+    "Experience",   # Years Coding
+    "Experience",   # Work Experience
+    "Career",       # Career Change Thoughts
+    "AI Attitude",  # Feels AI is a Threat
+    "Other",        # Work Tools Used
+    "Other",        # Tech Purchase Influence
+    "Other",        # Personal Tools Used
+    "Other",        # Learned via Personal Projects
+    "AI Attitude",  # Strongly Dislikes AI
+    "AI Attitude",  # Unsure About AI Threat
+    "AI Attitude",  # Loves AI
+    "AI Attitude"   # Highly Distrusts AI
+  )
+)
+
+p1 <- ggplot(fi_data, aes(x = reorder(variable, importance),
+                          y = importance, fill = group)) +
+  geom_col(width = 0.7) +
+  coord_flip() +
+  scale_fill_manual(values = c(
+    "Career" = "#1f4e79",
+    "Pay" = "#2e86ab",
+    "Experience" = "#a8c5e0",
+    "AI Attitude" = "#e67e22",
+    "Other" = "#cccccc"
+  )) +
+  labs(x = NULL, y = "Importance",
+       title = "What Predicts Job Satisfaction?",
+       subtitle = "5 of the Top 15 predictors are AI-related (orange)") +
+  theme_minimal(base_size = 18) +
+  theme(
+    legend.position = "top",
+    legend.title = element_blank(),
+    plot.title = element_text(face = "bold", size = 20, color = "#1f2a44"),
+    plot.subtitle = element_text(size = 12, color = "#6b7280", 
+                                 margin = margin(b = 10)),
+    axis.text.y = element_text(size = 10),
+    axis.text.x = element_text(size = 12),
+    panel.grid.minor = element_blank()
+  )
+
+p1
+```
+
+| Rank | Feature | Description |
+|------|---------|-------------|
+| 7 | AIThreat = "Yes" | Feels AI is a threat to their job |
+| 12 | AISent = "Very unfavorable" | Strongly dislikes AI tools |
+| 13 | AIThreat = "I'm not sure" | Uncertain about AI's threat |
+| 14 | AISent = "Very favorable" | Loves AI tools |
+| 15 | AIAcc = "Highly distrust" | Highly distrusts AI accuracy |
+
+In 2025 — three years after the public release of ChatGPT — a developer's stance toward AI is now as predictive of job satisfaction as classical factors like tenure or tool count. This is a finding that would not have appeared in pre-2023 survey analyses, making it uniquely characteristic of the current moment in software development.
+
+## The Deeper Insight: It's Not AI — It's the Fear of AI
+
+To understand *how* AI attitudes influence satisfaction, we examined the actual job satisfaction distribution within each AI-attitude group in the training set. The results challenged our initial hypothesis.
+
+```{r ai-satisfaction-plot, echo=FALSE, fig.height=4, fig.width=10}
+# (Insert the AI attitude vs satisfaction plot here)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+
+# rename group & distribution
+fi_data <- data.frame(
+  variable = c(
+    "Leaving Intention",
+    "Salary",
+    "Unemployed",
+    "Years Coding",
+    "Work Experience",
+    "Career Change Thoughts",
+    "Feels AI is a Threat",
+    "Work Tools Used",
+    "Tech Purchase Influence",
+    "Personal Tools Used",
+    "Learned via Personal Projects",
+    "Strongly Dislikes AI",
+    "Unsure About AI Threat",
+    "Loves AI",
+    "Highly Distrusts AI"
+  ),
+  importance = c(100, 25, 18, 13, 11, 9, 8, 7, 7, 5, 5, 4, 4, 3, 3),
+  group = c(
+    "Career",       # Leaving Intention
+    "Pay",          # Salary
+    "Career",       # Unemployed
+    "Experience",   # Years Coding
+    "Experience",   # Work Experience
+    "Career",       # Career Change Thoughts
+    "AI Attitude",  # Feels AI is a Threat
+    "Other",        # Work Tools Used
+    "Other",        # Tech Purchase Influence
+    "Other",        # Personal Tools Used
+    "Other",        # Learned via Personal Projects
+    "AI Attitude",  # Strongly Dislikes AI
+    "AI Attitude",  # Unsure About AI Threat
+    "AI Attitude",  # Loves AI
+    "AI Attitude"   # Highly Distrusts AI
+  )
+)
+
+
+ai_data <- data.frame(
+  ai_attitude = c("Loves AI", "Neutral", "Distrusts AI", "Threatened by AI","Strongly Dislikes AI"),
+  satisfied = c(74, 69, 69, 59,67),
+  neutral = c(21, 25, 22, 30, 22),
+  unsatisfied = c(5, 6, 9, 11, 9)
+)
+
+ai_long <- ai_data %>%
+  tidyr::pivot_longer(cols = -ai_attitude, names_to = "satisfaction", values_to = "pct") %>%
+  mutate(
+    ai_attitude = factor(ai_attitude,
+                         levels = c("Loves AI", "Neutral", "Distrusts AI", "Threatened by AI","Strongly Dislikes AI")),
+    satisfaction = factor(satisfaction,
+                          levels = c("unsatisfied", "neutral", "satisfied"))
+  )
+
+p2 <-ggplot(ai_long, aes(x = ai_attitude, y = pct, fill = satisfaction)) +
+  geom_col(width = 0.65) +
+  scale_fill_manual(values = c(
+    "satisfied" = "#27ae60",
+    "neutral" = "#bdc3c7",
+    "unsatisfied" = "#c0392b"
+  ),
+  labels = c("Unsatisfied", "Neutral", "Satisfied")) +
+  geom_text(aes(label = paste0(pct, "%")),
+            position = position_stack(vjust = 0.5),
+            color = "white", fontface = "bold", size = 5) +
+  labs(x = NULL, y = "% of Developers",
+       title = "Attitude Toward AI Predicts Job Satisfaction") +
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.position = "top",
+    legend.title = element_blank(),
+    plot.title = element_text(face = "bold", size = 22, color = "#1f2a44"),
+    axis.text = element_text(size = 14)
+  )
+
+p2
+
+```
+
+We initially expected a simple narrative: developers who embrace AI would be much more satisfied than those who reject it. The data tells a more nuanced story.
+
+**Disliking AI is not the problem.** Developers who strongly dislike AI or distrust its accuracy still report satisfaction rates of 67–69% — barely different from neutral or AI-positive developers. Personal preference about AI tools, it turns out, has remarkably little impact on overall job satisfaction.
+
+**Fearing AI is the problem.** The single group with markedly lower satisfaction is those who feel AI **threatens** their job: only 59% are satisfied (vs 74% for AI enthusiasts), and 11% are actively dissatisfied — the highest rate in our analysis. The distinguishing factor is not opinion, but **existential anxiety** about being replaced.
+
+This reframes the finding entirely. The AI revolution is not creating a binary of "winners who embrace AI" and "losers who reject it". Instead, it is creating a divide between those who feel **secure in their role** and those who feel **threatened by their own tools**. The same person can dislike AI tools and still love their job — as long as they do not feel their livelihood is at stake.
+
+## Conclusion: Mindset Is the New Salary
+
+Returning to our research question — *what predicts developer job satisfaction in 2025?* — our final answer combines an expected finding with a surprising one:
+
+1. **Career trajectory matters most.** Whether someone is considering leaving, how long they have coded, and whether they have doubted their career path are the most powerful predictors. Compensation matters, but ranks second.
+
+2. **AI anxiety is a new and measurable factor in workplace wellbeing.** Five AI-related variables enter the top 15 predictors — a phenomenon that would not have existed in this dataset five years ago.
+
+3. **The distinction is fear, not preference.** Developers can dislike, distrust, or be indifferent to AI and still be satisfied at work. It is the *fear of replacement* that correlates with dissatisfaction.
+
+For the many students in our audience who will soon enter the technology workforce, our model suggests three concrete questions to consider before accepting any offer: *Does this role match where I want my career to go? Will I be paid fairly?* And — newly relevant in 2025 — ***Will this workplace help me grow alongside AI, rather than be threatened by it?***
+
+In an era when one-third of our waking lives is spent at work, and when the nature of that work is being rewritten by AI, mindset has become as important as salary. The data has spoken; the choice is now ours.
+
