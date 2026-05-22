@@ -1,7 +1,6 @@
 ---
 title: 'Predicting Developer Job Satisfaction: A Multi-Model Classification Study'
 author: "Group W11G03"
-date: "`r Sys.Date()`"
 output:
   html_document:
     code_folding: hide
@@ -45,6 +44,7 @@ library(knitr)
 library(kableExtra)
 library(scales)
 library(patchwork)
+library(dplyr)
 ```
 ### Dataset & Justification
 
@@ -617,16 +617,16 @@ This suggests that the main modelling challenge is **weak class separability**. 
 This study uses the **Stack Overflow 2024 Developer Survey** (53,921 responses, 172 variables) to predict developer job satisfaction. The original 0–10 `JobSat` score is discretised into 3 classes: Dissatisfied (0–3), Neutral (4–6), and Satisfied (7–10).
 
 ```{r preprocessing, eval=TRUE}
-# ============================================================
-# Shared preprocessing pipeline
-# All parameters learned from training set only (no data leakage)
-# ============================================================
+### ============================================================
+### Shared preprocessing pipeline
+### All parameters learned from training set only (no data leakage)
+### ============================================================
 
 set.seed(123)
 data_path <- "survey_results_public.csv"
 df <- read_csv(data_path, show_col_types = FALSE)
 
-# --- Helper functions ---
+### --- Helper functions ---
 
 convert_years <- function(x) {
   x <- as.character(x)
@@ -662,7 +662,7 @@ is_near_zero_var <- function(x, freq_cut = 95 / 5, unique_cut = 10) {
   freq_ratio > freq_cut && percent_unique < unique_cut
 }
 
-# --- Step 1: Select 22 candidate predictors + create 5-class target ---
+### --- Step 1: Select 22 candidate predictors + create 5-class target ---
 
 gbm_raw <- df %>%
   mutate(
@@ -692,13 +692,13 @@ gbm_raw <- df %>%
   ))) %>%
   filter(!is.na(JobSat_Class))
 
-# --- Step 2: Stratified 80/20 train-test split BEFORE any preprocessing ---
+### --- Step 2: Stratified 80/20 train-test split BEFORE any preprocessing ---
 
 train_index <- createDataPartition(gbm_raw$JobSat_Class, p = 0.8, list = FALSE)
 train_raw <- gbm_raw[train_index, ]
 test_raw  <- gbm_raw[-train_index, ]
 
-# --- Step 3: Fit preprocessing rules on training data only ---
+### --- Step 3: Fit preprocessing rules on training data only ---
 
 fit_gbm_preprocess <- function(train_data) {
   missing_rates <- sapply(train_data, function(x) mean(is.na(x)))
@@ -763,7 +763,7 @@ fit_gbm_preprocess <- function(train_data) {
        multi_response_vars = multi_response_vars, multi_response_terms = multi_response_terms)
 }
 
-# --- Step 4: Apply preprocessing to both train and test ---
+### --- Step 4: Apply preprocessing to both train and test ---
 
 apply_gbm_preprocess <- function(data, prep) {
   data <- safe_remove_vars(data, prep$high_missing_vars)
@@ -820,7 +820,7 @@ levels_order <- c("Very_Dissatisfied","Dissatisfied","Neutral","Satisfied","Very
 train_data$JobSat_Class <- factor(train_data$JobSat_Class, levels = levels_order)
 test_data$JobSat_Class  <- factor(test_data$JobSat_Class,  levels = levels_order)
 
-# --- Step 5: Feature engineering — LeavingScore ---
+### --- Step 5: Feature engineering — LeavingScore ---
 
 leaving_map <- c(
   "I have strongly considered changing my career and/or the industry I work in" = 4,
@@ -843,7 +843,7 @@ leaving_median <- median(train_leaving_raw, na.rm = TRUE)
 train_data <- add_leaving_score(train_data, leaving_median)
 test_data  <- add_leaving_score(test_data,  leaving_median)
 
-# --- Step 6: Feature selection ---
+### --- Step 6: Feature selection ---
 
 predictor_names <- setdiff(names(train_data), "JobSat_Class")
 nzv_vars <- predictor_names[sapply(train_data[predictor_names], is_near_zero_var)]
@@ -865,7 +865,7 @@ high_corr_vars <- high_corr_vars[!is.na(high_corr_vars) & high_corr_vars != "" &
 train_data <- safe_remove_vars(train_data, high_corr_vars)
 test_data  <- safe_remove_vars(test_data,  high_corr_vars)
 
-# --- Step 7: Remap to 3-class ---
+### --- Step 7: Remap to 3-class ---
 
 remap_to_3class <- function(x) {
   factor(case_when(
@@ -908,12 +908,14 @@ kable(steps_df, align = "ll") %>%
 After preprocessing: **`r nrow(train_3)`** training samples, **`r nrow(test_3)`** test samples, **`r ncol(train_3) - 1`** features.
 
 
-# Model Fitting
+### Model Fitting
 
 We evaluate five classification models spanning a complexity spectrum: Naive Bayes (probabilistic baseline), Multinomial Logistic Regression (linear baseline), Random Forest and Gradient Boosting (ensemble methods), and a Deep Neural Network (DNN). All models use the same shared train/test split and are evaluated with identical metrics. Each model employs a tailored strategy for class imbalance. Model training and tuning were pre-computed via `run_all_models.R`; the final-model training code is shown in foldable blocks below and results are loaded from `.rds` files.
 
+The selected models are appropriate for this dataset for different reasons. Logistic Regression provides a simple and interpretable linear baseline after dummy encoding and standardisation. Naive Bayes provides a lightweight probabilistic baseline and is useful for checking whether simple feature patterns are enough for this classification task. Random Forest and Gradient Boosting are suitable because the survey data contains mixed feature types, many transformed predictors, and possible non-linear relationships between work conditions, AI attitudes, and job satisfaction. The DNN is included as a more flexible model that can learn complex patterns from the processed feature matrix. Using models from simple baselines to more flexible methods also helps us test whether extra model complexity improves prediction for this difficult and imbalanced satisfaction classification problem.
+
 ```{r load-results, eval=TRUE}
-# Load all pre-computed results
+### Load all pre-computed results
 gbm_res <- readRDS("results/gbm_3class.rds")
 dnn_res <- readRDS("results/dnn_3class.rds")
 nb_res  <- readRDS("results/nb_3class.rds")
@@ -921,7 +923,7 @@ rf_res  <- readRDS("results/rf_3class.rds")
 lr_res  <- readRDS("results/lr_3class.rds")
 comparison <- readRDS("results/model_comparison.rds")
 
-# Shared confusion matrix plot function
+### Shared confusion matrix plot function
 plot_cm <- function(cm_obj, title) {
   cm_df <- as.data.frame(cm_obj$table)
   names(cm_df) <- c("Predicted", "Actual", "Freq")
@@ -935,12 +937,12 @@ plot_cm <- function(cm_obj, title) {
 }
 ```
 
-## Gradient Boosting (GBM)
+#### Gradient Boosting (GBM)
 
 GBM fits an additive ensemble of shallow decision trees, with each tree correcting the residual errors of the previous ensemble. Class imbalance is handled via **sqrt-based case weights**. The final model uses the best hyperparameters selected by 3-fold CV (see Model Improvement for tuning details).
 
 ```{r gbm-final-code, eval=FALSE}
-# GBM: Final model with best hyperparameters (pre-computed)
+### GBM: Final model with best hyperparameters (pre-computed)
 make_class_weights <- function(y) {
   y <- factor(y); cc <- table(y)
   raw_w <- sqrt(max(cc) / cc)
@@ -958,18 +960,18 @@ gbm_pred_3 <- predict(gbm_final_3, newdata = test_3)
 
 **Best parameters:** n.trees = `r gbm_res$best_params$n.trees`, depth = `r gbm_res$best_params$interaction.depth`, shrinkage = `r gbm_res$best_params$shrinkage`, min.node = `r gbm_res$best_params$n.minobsinnode`. **Imbalance strategy:** sqrt case weights.
 
-```{r gbm-cm, eval=TRUE, fig.height=2.8}
+```{r gbm-cm, eval=TRUE, fig.height=2, fig.align="center"}
 plot_cm(gbm_res$confusion_matrix, "GBM — Confusion Matrix (Test Set)")
 ```
 
-## Deep Neural Network (DNN)
+#### Deep Neural Network (DNN)
 
 A 3-layer feedforward network (Linear → ReLU → Dropout per layer) trained with **Focal Loss** ($FL = -\alpha_t(1-p_t)^\gamma \log p_t$, $\gamma = 2.0$), which dynamically down-weights easy samples and focuses on hard examples. The Neutral class receives an additional 1.5× weight boost. DNN-specific preprocessing includes one-hot encoding, Z-score standardisation (parameters from training set only), and value clipping to [-5, 5].
 
 ```{r dnn-final-code, eval=FALSE}
-# DNN: Final model with best hyperparameters (pre-computed)
-# Requires: library(torch); library(luz)
-# DNN-specific preprocessing: one-hot + Z-score (train params only) + clip [-5, 5]
+### DNN: Final model with best hyperparameters (pre-computed)
+### Requires: library(torch); library(luz)
+### DNN-specific preprocessing: one-hot + Z-score (train params only) + clip [-5, 5]
 X_train_raw <- train_data %>% select(-JobSat_Class)
 X_test_raw  <- test_data  %>% select(-JobSat_Class)
 X_train_raw$.__split__ <- "train"; X_test_raw$.__split__ <- "test"
@@ -982,14 +984,14 @@ train_sds[train_sds == 0] <- 1
 X_train_mat <- as.matrix(pmax(pmin(scale(X_train_oh, center=train_means, scale=train_sds), 5), -5))
 X_test_mat  <- as.matrix(pmax(pmin(scale(X_test_oh, center=train_means, scale=train_sds), 5), -5))
 
-# Class weights: sqrt weighting + Neutral x1.5 boost
+### Class weights: sqrt weighting + Neutral x1.5 boost
 dnn_counts <- table(factor(y_train_dnn, levels = 1:3))
 dnn_weights <- as.numeric(sqrt(length(y_train_dnn) / (3 * dnn_counts)))
 dnn_weights <- dnn_weights / sum(dnn_weights) * 3
 dnn_weights[2] <- dnn_weights[2] * 1.5
 dnn_weights <- dnn_weights / sum(dnn_weights) * 3
 
-# Train: 80 epochs, lr scheduler, early stopping (patience=15)
+### Train: 80 epochs, lr scheduler, early stopping (patience=15)
 set.seed(123); torch_manual_seed(123)
 dnn_final_model <- dnn_model %>%
   setup(loss = focal_loss_module(weight = class_weights_tensor, gamma = 2.0),
@@ -1006,17 +1008,17 @@ dnn_final_model <- dnn_model %>%
 
 **Best parameters:** lr = `r dnn_res$best_params$lr`, dropout = `r dnn_res$best_params$dropout`, hidden = `r dnn_res$best_params$hidden`. **Imbalance strategy:** Focal Loss (gamma=2) + Neutral ×1.5 boost.
 
-```{r dnn-cm, eval=TRUE, fig.height=2.8}
+```{r dnn-cm, eval=TRUE, fig.height=2, fig.align="center"}
 plot_cm(dnn_res$confusion_matrix, "DNN — Confusion Matrix (Test Set)")
 ```
 
-## Naive Bayes (NB)
+#### Naive Bayes (NB)
 
 Naive Bayes estimates class-conditional feature probabilities under a conditional independence assumption. Since NB cannot accept case weights, class imbalance is addressed via **SMOTE oversampling** (over_ratio = 0.8) applied to the training set only.
 
 ```{r nb-final-code, eval=FALSE}
-# NB: Final model with best hyperparameters (pre-computed)
-# Uses shared train_3/test_3 for fair comparison (not re-split)
+### NB: Final model with best hyperparameters (pre-computed)
+### Uses shared train_3/test_3 for fair comparison (not re-split)
 library(e1071); library(recipes); library(themis)
 train_nb <- train_3; test_nb <- test_3
 factor_cols_nb <- setdiff(names(train_nb)[sapply(train_nb, is.factor)], "JobSat_Class")
@@ -1037,16 +1039,16 @@ nb_pred_3 <- predict(nb_model_3, newdata = test_nb)
 
 **Best parameters:** laplace = `r nb_res$best_params$laplace`, usekernel = `r nb_res$best_params$usekernel`. **Imbalance strategy:** SMOTE (over_ratio = 0.8).
 
-```{r nb-cm, eval=TRUE, fig.height=2.8}
+```{r nb-cm, eval=TRUE, fig.height=2, fig.align="center"}
 plot_cm(nb_res$confusion_matrix, "Naive Bayes — Confusion Matrix (Test Set)")
 ```
 
-## Random Forest (RF)
+#### Random Forest (RF)
 
 Random Forest aggregates predictions from an ensemble of de-correlated decision trees. Two imbalance strategies are compared: **power-based class weights** (power = 0.75/0.85/0.95) and **downsampling**. The best is selected via 3-fold CV Macro F1. The `extratrees` split rule provides extra randomisation.
 
 ```{r rf-final-code, eval=FALSE}
-# RF: Best model selected from multiple strategies (pre-computed)
+### RF: Best model selected from multiple strategies (pre-computed)
 library(ranger)
 make_class_weights_rf <- function(y, weight_power = 0.75) {
   cc <- table(y); as.numeric((max(cc) / cc) ^ weight_power)
@@ -1069,16 +1071,16 @@ rf_pred_3 <- predict(best_rf, newdata = test_3)
 
 **Best parameters:** mtry = `r rf_res$best_params$mtry`, min.node.size = `r rf_res$best_params$min.node.size`, strategy = `r rf_res$best_params$model_id`. **Imbalance strategy:** `r rf_res$best_params$model_id`.
 
-```{r rf-cm, eval=TRUE, fig.height=2.8}
+```{r rf-cm, eval=TRUE, fig.height=2, fig.align="center"}
 plot_cm(rf_res$confusion_matrix, "Random Forest — Confusion Matrix (Test Set)")
 ```
 
-## Multinomial Logistic Regression (LR)
+#### Multinomial Logistic Regression (LR)
 
 Multinomial logistic regression extends binary logistic regression to multiple classes via a softmax link. Features are dummy-encoded (`fullRank = TRUE`) and standardised (center + scale, parameters from training set only). Class imbalance is handled via **power-weighted case weights** (power = 0.75).
 
 ```{r lr-final-code, eval=FALSE}
-# LR: Final model with best hyperparameters (pre-computed)
+### LR: Final model with best hyperparameters (pre-computed)
 library(nnet)
 make_case_weights_lr <- function(y, weight_power = 0.75) {
   cc <- table(y); cw <- (max(cc) / cc) ^ weight_power
@@ -1104,14 +1106,14 @@ lr_pred_3 <- predict(lr_model_3, newdata = x_test_dummy)
 
 **Best parameters:** decay = `r lr_res$best_params$decay`. **Imbalance strategy:** power case weights (0.75).
 
-```{r lr-cm, eval=TRUE, fig.height=2.8}
+```{r lr-cm, eval=TRUE, fig.height=2, fig.align="center"}
 plot_cm(lr_res$confusion_matrix, "Logistic Regression — Confusion Matrix (Test Set)")
 ```
 
 
-# Model Improvement
+### Model Improvement
 
-## Feature Selection and Engineering
+#### Feature Selection and Engineering
 
 Starting from 172 raw survey columns, we applied a multi-stage feature selection pipeline. All decisions were based exclusively on training data.
 
@@ -1132,12 +1134,12 @@ kable(funnel_df, col.names = c("Stage", "Feature Count"), align = "lr") %>%
 
 We selected 22 domain-relevant predictors covering demographics (Age, EdLevel, Country), work context (Employment, RemoteWork, OrgSize, ICorPM, DevType, Industry), experience (WorkExp, YearsCode), compensation (ConvertedCompYearly), AI attitudes (AISelect, AISent, AIAcc, AIThreat), career intent (NewRole), and tool usage (ToolCountWork, ToolCountPersonal, TechEndorseIntro, PurchaseInfluence). Feature engineering included: (1) binarising multi-response columns (e.g., DevType, Employment) into top-15 binary indicators, (2) creating a `LeavingScore` ordinal feature by mapping NewRole's 5 career-change categories to a 0–4 numeric scale, and (3) log-transforming ConvertedCompYearly to normalise its right-skewed distribution. We then applied near-zero variance removal and high-correlation filtering (r > 0.90) to arrive at the final feature set.
 
-## Hyperparameter Tuning
+#### Hyperparameter Tuning
 
 All five models were tuned using **3-fold cross-validation** with **Macro F1** as the primary selection metric. Complete tuning code was executed in advance via `run_all_models.R`; the key tuning logic is shown in foldable blocks below.
 
 ```{r gbm-tuning-code, eval=FALSE}
-# GBM tuning: 24 combos on stratified subset, 3-fold CV
+### GBM tuning: 24 combos on stratified subset, 3-fold CV
 gbm_grid_3 <- expand.grid(
   n.trees = c(500, 800, 1000), interaction.depth = c(3, 5),
   shrinkage = c(0.03, 0.05), n.minobsinnode = c(10, 20))
@@ -1154,22 +1156,22 @@ gbm_tuned_3 <- train(
 ```
 
 ```{r dnn-tuning-code, eval=FALSE}
-# DNN tuning: 8 combos x 3 folds = 24 training runs (manual CV)
+### DNN tuning: 8 combos x 3 folds = 24 training runs (manual CV)
 dnn_grid <- expand.grid(
   lr = c(0.001, 0.0005), dropout_rate = c(0.3, 0.5),
   hidden_size = c("large", "small"), stringsAsFactors = FALSE)
 fold_index_dnn <- createFolds(factor(y_train_dnn, levels = 1:3), k = 3, list = TRUE)
 for (i in seq_len(nrow(dnn_grid))) {
   for (k in 1:3) {
-    # Per-fold: train with Focal Loss (gamma=2.0), 80 epochs, early stopping patience=12
-    # Evaluate Macro F1 on validation fold
+    ### Per-fold: train with Focal Loss (gamma=2.0), 80 epochs, early stopping patience=12
+    ### Evaluate Macro F1 on validation fold
   }
 }
-# Select combo with highest mean CV Macro F1
+### Select combo with highest mean CV Macro F1
 ```
 
 ```{r nb-tuning-code, eval=FALSE}
-# NB tuning: 6 combos, 3-fold CV on SMOTE-balanced training set
+### NB tuning: 6 combos, 3-fold CV on SMOTE-balanced training set
 tune_grid_nb <- expand.grid(laplace = c(0, 1, 5), usekernel = c(FALSE, TRUE), adjust = 1)
 nb_model_3 <- train(
   JobSat_Class ~ ., data = train_bal_nb, method = "naive_bayes",
@@ -1179,7 +1181,7 @@ nb_model_3 <- train(
 ```
 
 ```{r rf-tuning-code, eval=FALSE}
-# RF tuning: ~60 combos across 4 strategies, 3-fold CV
+### RF tuning: ~60 combos across 4 strategies, 3-fold CV
 rf_grid_w <- expand.grid(
   mtry = unique(pmin(ncol(train_3)-1, c(6,8,10,12,16))),
   splitrule = "extratrees", min.node.size = c(10, 15, 20))
@@ -1194,7 +1196,7 @@ train(JobSat_Class ~ ., data = train_3, method = "ranger",
 ```
 
 ```{r lr-tuning-code, eval=FALSE}
-# LR tuning: 4 decay values, 3-fold CV
+### LR tuning: 4 decay values, 3-fold CV
 train(x = x_train_dummy, y = y_train_lr, method = "multinom",
   trControl = trainControl(method="cv", number=3, summaryFunction=macro_f1_summary),
   tuneGrid = expand.grid(decay = c(0, 0.001, 0.01, 0.1)),
@@ -1247,9 +1249,9 @@ kable(tuning_summary,
 ```
 
 
-# Model Evaluation & Selection
+### Model Evaluation & Selection
 
-## Overall Comparison
+#### Overall Comparison
 
 ```{r comparison-table, eval=TRUE}
 kable(comparison,
@@ -1291,7 +1293,7 @@ ggplot(all_class, aes(x = Class, y = F1, fill = Model)) +
   theme_minimal(base_size = 12) + theme(legend.position = "top") + ylim(0, 1)
 ```
 
-## Final Model Selection
+#### Final Model Selection
 
 Based on the evaluation, **Gradient Boosting (GBM)** is selected as the final model:
 
@@ -1301,3 +1303,238 @@ Based on the evaluation, **Gradient Boosting (GBM)** is selected as the final mo
 4. **Interpretability**: variable importance is readily available via GBM, providing actionable domain insights.
 
 All five models achieve Macro F1 in the 0.44–0.47 range, reflecting the inherent difficulty of predicting subjective job satisfaction from survey features. The relatively narrow performance gap between the simplest useful model (Logistic Regression, `r lr_res$overall_metrics$Macro_F1`) and the best (GBM, `r gbm_res$overall_metrics$Macro_F1`) suggests that the signal-to-noise ratio in the dataset is the primary bottleneck rather than model capacity. Nevertheless, ensemble methods (GBM, RF) consistently outperform linear and probabilistic baselines, and thoughtful imbalance handling — whether via class weights, Focal Loss, or SMOTE — is essential for achieving non-trivial Macro F1 in skewed multi-class settings.
+
+### Final Results & Conclusion
+
+#### Key Findings: What Predicts Developer Job Satisfaction?
+
+Our 3-class Gradient Boosting Machine (GBM) model, tuned via stratified 3-fold cross-validation with Macro F1 as the primary metric, identified **the most influential predictors of developer job satisfaction** in the Stack Overflow 2025 Developer Survey. The model's variable importance ranking revealed two stories worth telling: an expected one and a surprising one.
+
+##### The Expected: Career and Compensation Lead
+
+Unsurprisingly, the strongest predictor is **LeavingScore** — an ordinal feature we engineered from the `NewRole` variable that captures a developer's intention to leave or change careers (importance = 100). Developers who have considered switching careers are, almost by definition, less satisfied with their current jobs. While this overlap between leaving intent and dissatisfaction is a methodological caveat we openly acknowledge, the feature remains the model's strongest signal.
+
+Beyond LeavingScore, the next tier of predictors is more substantive:
+
+- **Salary (log-transformed yearly compensation)** ranks second, but with importance ≈25 — only a quarter of LeavingScore's strength. Money matters, but it is far from the dominant force one might expect.
+- **Employment status (not employed)** and **YearsCode / WorkExp** follow, capturing the role of career stage and stability.
+- **Career Change Thoughts** (a separate `NewRole` category) reinforces that internal doubt is a strong satisfaction signal.
+
+##### The Surprise: AI Attitudes Permeate the Top 15
+
+The most distinctive finding of our model is that **five of the top 15 predictors are AI-related**:
+```{r five of the top 15 predictors are AI-related, echo=FALSE, fig.height=4, fig.width=10}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+
+# rename group & distribution
+fi_data <- data.frame(
+  variable = c(
+    "Leaving Intention",
+    "Salary",
+    "Unemployed",
+    "Years Coding",
+    "Work Experience",
+    "Career Change Thoughts",
+    "Feels AI is a Threat",
+    "Work Tools Used",
+    "Tech Purchase Influence",
+    "Personal Tools Used",
+    "Learned via Personal Projects",
+    "Strongly Dislikes AI",
+    "Unsure About AI Threat",
+    "Loves AI",
+    "Highly Distrusts AI"
+  ),
+  importance = c(100, 25, 18, 13, 11, 9, 8, 7, 7, 5, 5, 4, 4, 3, 3),
+  group = c(
+    "Career",       # Leaving Intention
+    "Pay",          # Salary
+    "Career",       # Unemployed
+    "Experience",   # Years Coding
+    "Experience",   # Work Experience
+    "Career",       # Career Change Thoughts
+    "AI Attitude",  # Feels AI is a Threat
+    "Other",        # Work Tools Used
+    "Other",        # Tech Purchase Influence
+    "Other",        # Personal Tools Used
+    "Other",        # Learned via Personal Projects
+    "AI Attitude",  # Strongly Dislikes AI
+    "AI Attitude",  # Unsure About AI Threat
+    "AI Attitude",  # Loves AI
+    "AI Attitude"   # Highly Distrusts AI
+  )
+)
+
+p1 <- ggplot(fi_data, aes(x = reorder(variable, importance),
+                          y = importance, fill = group)) +
+  geom_col(width = 0.7) +
+  coord_flip() +
+  scale_fill_manual(values = c(
+    "Career" = "#1f4e79",
+    "Pay" = "#2e86ab",
+    "Experience" = "#a8c5e0",
+    "AI Attitude" = "#e67e22",
+    "Other" = "#cccccc"
+  )) +
+  labs(x = NULL, y = "Importance",
+       title = "What Predicts Job Satisfaction?",
+       subtitle = "5 of the Top 15 predictors are AI-related (orange)") +
+  theme_minimal(base_size = 18) +
+  theme(
+    legend.position = "top",
+    legend.title = element_blank(),
+    plot.title = element_text(face = "bold", size = 20, color = "#1f2a44"),
+    plot.subtitle = element_text(size = 12, color = "#6b7280", 
+                                 margin = margin(b = 10)),
+    axis.text.y = element_text(size = 10),
+    axis.text.x = element_text(size = 12),
+    panel.grid.minor = element_blank()
+  )
+
+p1
+```
+
+| Rank | Feature | Description |
+|------|---------|-------------|
+| 7 | AIThreat = "Yes" | Feels AI is a threat to their job |
+| 12 | AISent = "Very unfavorable" | Strongly dislikes AI tools |
+| 13 | AIThreat = "I'm not sure" | Uncertain about AI's threat |
+| 14 | AISent = "Very favorable" | Loves AI tools |
+| 15 | AIAcc = "Highly distrust" | Highly distrusts AI accuracy |
+
+In 2025 — three years after the public release of ChatGPT — a developer's stance toward AI is now as predictive of job satisfaction as classical factors like tenure or tool count. This is a finding that would not have appeared in pre-2023 survey analyses, making it uniquely characteristic of the current moment in software development.
+
+#### The Deeper Insight: It's Not AI — It's the Fear of AI
+
+To understand *how* AI attitudes influence satisfaction, we examined the actual job satisfaction distribution within each AI-attitude group in the training set. The results challenged our initial hypothesis.
+
+```{r ai-satisfaction-plot, echo=FALSE, fig.height=4, fig.width=10}
+# (Insert the AI attitude vs satisfaction plot here)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+
+# rename group & distribution
+fi_data <- data.frame(
+  variable = c(
+    "Leaving Intention",
+    "Salary",
+    "Unemployed",
+    "Years Coding",
+    "Work Experience",
+    "Career Change Thoughts",
+    "Feels AI is a Threat",
+    "Work Tools Used",
+    "Tech Purchase Influence",
+    "Personal Tools Used",
+    "Learned via Personal Projects",
+    "Strongly Dislikes AI",
+    "Unsure About AI Threat",
+    "Loves AI",
+    "Highly Distrusts AI"
+  ),
+  importance = c(100, 25, 18, 13, 11, 9, 8, 7, 7, 5, 5, 4, 4, 3, 3),
+  group = c(
+    "Career",       # Leaving Intention
+    "Pay",          # Salary
+    "Career",       # Unemployed
+    "Experience",   # Years Coding
+    "Experience",   # Work Experience
+    "Career",       # Career Change Thoughts
+    "AI Attitude",  # Feels AI is a Threat
+    "Other",        # Work Tools Used
+    "Other",        # Tech Purchase Influence
+    "Other",        # Personal Tools Used
+    "Other",        # Learned via Personal Projects
+    "AI Attitude",  # Strongly Dislikes AI
+    "AI Attitude",  # Unsure About AI Threat
+    "AI Attitude",  # Loves AI
+    "AI Attitude"   # Highly Distrusts AI
+  )
+)
+
+
+ai_data <- data.frame(
+  ai_attitude = c("Loves AI", "Neutral", "Distrusts AI", "Threatened by AI","Strongly Dislikes AI"),
+  satisfied = c(74, 69, 69, 59,67),
+  neutral = c(21, 25, 22, 30, 22),
+  unsatisfied = c(5, 6, 9, 11, 9)
+)
+
+ai_long <- ai_data %>%
+  tidyr::pivot_longer(cols = -ai_attitude, names_to = "satisfaction", values_to = "pct") %>%
+  mutate(
+    ai_attitude = factor(ai_attitude,
+                         levels = c("Loves AI", "Neutral", "Distrusts AI", "Threatened by AI","Strongly Dislikes AI")),
+    satisfaction = factor(satisfaction,
+                          levels = c("unsatisfied", "neutral", "satisfied"))
+  )
+
+p2 <-ggplot(ai_long, aes(x = ai_attitude, y = pct, fill = satisfaction)) +
+  geom_col(width = 0.65) +
+  scale_fill_manual(values = c(
+    "satisfied" = "#27ae60",
+    "neutral" = "#bdc3c7",
+    "unsatisfied" = "#c0392b"
+  ),
+  labels = c("Unsatisfied", "Neutral", "Satisfied")) +
+  geom_text(aes(label = paste0(pct, "%")),
+            position = position_stack(vjust = 0.5),
+            color = "white", fontface = "bold", size = 5) +
+  labs(x = NULL, y = "% of Developers",
+       title = "Attitude Toward AI Predicts Job Satisfaction") +
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.position = "top",
+    legend.title = element_blank(),
+    plot.title = element_text(face = "bold", size = 22, color = "#1f2a44"),
+    axis.text = element_text(size = 14)
+  )
+
+p2
+
+```
+
+We initially expected a simple narrative: developers who embrace AI would be much more satisfied than those who reject it. The data tells a more nuanced story.
+
+**Disliking AI is not the problem.** Developers who strongly dislike AI or distrust its accuracy still report satisfaction rates of 67–69% — barely different from neutral or AI-positive developers. Personal preference about AI tools, it turns out, has remarkably little impact on overall job satisfaction.
+
+**Fearing AI is the problem.** The single group with markedly lower satisfaction is those who feel AI **threatens** their job: only 59% are satisfied (vs 74% for AI enthusiasts), and 11% are actively dissatisfied — the highest rate in our analysis. The distinguishing factor is not opinion, but **existential anxiety** about being replaced.
+
+This reframes the finding entirely. The AI revolution is not creating a binary of "winners who embrace AI" and "losers who reject it". Instead, it is creating a divide between those who feel **secure in their role** and those who feel **threatened by their own tools**. The same person can dislike AI tools and still love their job — as long as they do not feel their livelihood is at stake.
+
+#### Conclusion: Mindset Is the New Salary
+
+Returning to our research question — *what predicts developer job satisfaction in 2025?* — our final answer combines an expected finding with a surprising one:
+
+1. **Career trajectory matters most.** Whether someone is considering leaving, how long they have coded, and whether they have doubted their career path are the most powerful predictors. Compensation matters, but ranks second.
+
+2. **AI anxiety is a new and measurable factor in workplace wellbeing.** Five AI-related variables enter the top 15 predictors — a phenomenon that would not have existed in this dataset five years ago.
+
+3. **The distinction is fear, not preference.** Developers can dislike, distrust, or be indifferent to AI and still be satisfied at work. It is the *fear of replacement* that correlates with dissatisfaction.
+
+For the many students in our audience who will soon enter the technology workforce, our model suggests three concrete questions to consider before accepting any offer: *Does this role match where I want my career to go? Will I be paid fairly?* And — newly relevant in 2025 — ***Will this workplace help me grow alongside AI, rather than be threatened by it?***
+
+In an era when one-third of our waking lives is spent at work, and when the nature of that work is being rewritten by AI, mindset has become as important as salary. The data has spoken; the choice is now ours.
+
+
+
+### References
+
+Agresti, A. (2018). An introduction to categorical data analysis (3rd ed.). Wiley.
+
+Breiman, L. (2001). Random forests. Machine Learning, 45(1), 5–32. https://doi.org/10.1023/A:1010933404324
+
+Friedman, J. H. (2001). Greedy function approximation: A gradient boosting machine. The Annals of Statistics, 29(5), 1189–1232. https://doi.org/10.1214/aos/1013203451
+
+Hand, D. J., & Yu, K. (2001). Idiot’s Bayes—not so stupid after all? International Statistical Review, 69(3), 385–398. https://doi.org/10.1111/j.1751-5823.2001.tb00465.x
+
+LeCun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. Nature, 521(7553), 436–444. https://doi.org/10.1038/nature14539
+
+Locke, E. A. (1976). The nature and causes of job satisfaction. In M. D. Dunnette (Ed.), Handbook of industrial and organizational psychology (pp. 1297–1349). Rand McNally.
+
+Sokolova, M., & Lapalme, G. (2009). A systematic analysis of performance measures for classification tasks. Information Processing & Management, 45(4), 427–437. https://doi.org/10.1016/j.ipm.2009.03.002
