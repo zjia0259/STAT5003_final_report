@@ -1384,29 +1384,13 @@ Based on the evaluation, **Gradient Boosting (GBM)** is selected as the final mo
 
 All five models achieve Macro F1 in the 0.44–0.47 range, reflecting the inherent difficulty of predicting subjective job satisfaction from survey features. The relatively narrow performance gap between the simplest useful model (Logistic Regression, `r lr_res$overall_metrics$Macro_F1`) and the best (GBM, `r gbm_res$overall_metrics$Macro_F1`) suggests that the signal-to-noise ratio in the dataset is the primary bottleneck rather than model capacity. Nevertheless, ensemble methods (GBM, RF) consistently outperform linear and probabilistic baselines, and thoughtful imbalance handling — whether via class weights, Focal Loss, or SMOTE — is essential for achieving non-trivial Macro F1 in skewed multi-class settings.
 
+### Final Results & Conclusion
 
-### References
-
-Agresti, A. (2018). An introduction to categorical data analysis (3rd ed.). Wiley.
-
-Breiman, L. (2001). Random forests. Machine Learning, 45(1), 5–32. https://doi.org/10.1023/A:1010933404324
-
-Friedman, J. H. (2001). Greedy function approximation: A gradient boosting machine. The Annals of Statistics, 29(5), 1189–1232. https://doi.org/10.1214/aos/1013203451
-
-Hand, D. J., & Yu, K. (2001). Idiot’s Bayes—not so stupid after all? International Statistical Review, 69(3), 385–398. https://doi.org/10.1111/j.1751-5823.2001.tb00465.x
-
-LeCun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. Nature, 521(7553), 436–444. https://doi.org/10.1038/nature14539
-
-Locke, E. A. (1976). The nature and causes of job satisfaction. In M. D. Dunnette (Ed.), Handbook of industrial and organizational psychology (pp. 1297–1349). Rand McNally.
-
-Sokolova, M., & Lapalme, G. (2009). A systematic analysis of performance measures for classification tasks. Information Processing & Management, 45(4), 427–437. https://doi.org/10.1016/j.ipm.2009.03.002
-# Final Results & Conclusion
-
-## Key Findings: What Predicts Developer Job Satisfaction?
+#### Key Findings: What Predicts Developer Job Satisfaction?
 
 Our 3-class Gradient Boosting Machine (GBM) model, tuned via stratified 3-fold cross-validation with Macro F1 as the primary metric, identified **the most influential predictors of developer job satisfaction** in the Stack Overflow 2025 Developer Survey. The model's variable importance ranking revealed two stories worth telling: an expected one and a surprising one.
 
-### The Expected: Career and Compensation Lead
+##### The Expected: Career and Compensation Lead
 
 Unsurprisingly, the strongest predictor is **LeavingScore** — an ordinal feature we engineered from the `NewRole` variable that captures a developer's intention to leave or change careers (importance = 100). Developers who have considered switching careers are, almost by definition, less satisfied with their current jobs. While this overlap between leaving intent and dissatisfaction is a methodological caveat we openly acknowledge, the feature remains the model's strongest signal.
 
@@ -1416,7 +1400,7 @@ Beyond LeavingScore, the next tier of predictors is more substantive:
 - **Employment status (not employed)** and **YearsCode / WorkExp** follow, capturing the role of career stage and stability.
 - **Career Change Thoughts** (a separate `NewRole` category) reinforces that internal doubt is a strong satisfaction signal.
 
-### The Surprise: AI Attitudes Permeate the Top 15
+##### The Surprise: AI Attitudes Permeate the Top 15
 
 The most distinctive finding of our model is that **five of the top 15 predictors are AI-related**:
 ```{r five of the top 15 predictors are AI-related, echo=FALSE, fig.height=4, fig.width=10}
@@ -1503,7 +1487,7 @@ p1
 
 In 2025 — three years after the public release of ChatGPT — a developer's stance toward AI is now as predictive of job satisfaction as classical factors like tenure or tool count. This is a finding that would not have appeared in pre-2023 survey analyses, making it uniquely characteristic of the current moment in software development.
 
-## The Deeper Insight: It's Not AI — It's the Fear of AI
+#### The Deeper Insight: It's Not AI — It's the Fear of AI
 
 To understand *how* AI attitudes influence satisfaction, we examined the actual job satisfaction distribution within each AI-attitude group in the training set. The results challenged our initial hypothesis.
 
@@ -1603,7 +1587,7 @@ We initially expected a simple narrative: developers who embrace AI would be muc
 
 This reframes the finding entirely. The AI revolution is not creating a binary of "winners who embrace AI" and "losers who reject it". Instead, it is creating a divide between those who feel **secure in their role** and those who feel **threatened by their own tools**. The same person can dislike AI tools and still love their job — as long as they do not feel their livelihood is at stake.
 
-## Conclusion: Mindset Is the New Salary
+#### Conclusion: Mindset Is the New Salary
 
 Returning to our research question — *what predicts developer job satisfaction in 2025?* — our final answer combines an expected finding with a surprising one:
 
@@ -1617,3 +1601,20 @@ For the many students in our audience who will soon enter the technology workfor
 
 In an era when one-third of our waking lives is spent at work, and when the nature of that work is being rewritten by AI, mindset has become as important as salary. The data has spoken; the choice is now ours.
 
+
+
+### References
+
+Agresti, A. (2018). An introduction to categorical data analysis (3rd ed.). Wiley.
+
+Breiman, L. (2001). Random forests. Machine Learning, 45(1), 5–32. https://doi.org/10.1023/A:1010933404324
+
+Friedman, J. H. (2001). Greedy function approximation: A gradient boosting machine. The Annals of Statistics, 29(5), 1189–1232. https://doi.org/10.1214/aos/1013203451
+
+Hand, D. J., & Yu, K. (2001). Idiot’s Bayes—not so stupid after all? International Statistical Review, 69(3), 385–398. https://doi.org/10.1111/j.1751-5823.2001.tb00465.x
+
+LeCun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. Nature, 521(7553), 436–444. https://doi.org/10.1038/nature14539
+
+Locke, E. A. (1976). The nature and causes of job satisfaction. In M. D. Dunnette (Ed.), Handbook of industrial and organizational psychology (pp. 1297–1349). Rand McNally.
+
+Sokolova, M., & Lapalme, G. (2009). A systematic analysis of performance measures for classification tasks. Information Processing & Management, 45(4), 427–437. https://doi.org/10.1016/j.ipm.2009.03.002
