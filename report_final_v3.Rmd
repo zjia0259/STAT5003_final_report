@@ -1,11 +1,12 @@
 ---
-title: 'Predicting Developer Job Satisfaction: A Multi-Model Classification Study'
+title: "Predicting Developer Job Satisfaction: A Multi-Model Classification Study"
 author: "Group W11G03"
 output:
   html_document:
     code_folding: hide
     number_sections: true
   pdf_document: default
+  word_document: default
 ---
 
 <style>
@@ -15,19 +16,6 @@ h1.title {
 }
 body {
     font-size: 11px;
-}
-@media print {
-  .code-folding-btn, .btn-group, .nav-tabs, .tab-content > .tab-pane {
-    display: block !important;
-  }
-  /* Hide all code chunks when printing to keep page count down */
-  pre.r, pre.sourceCode, .sourceCode {
-    display: none !important;
-  }
-  /* But keep output (tables, plots) visible */
-  .kable_wrapper, .figure, img, table {
-    display: block !important;
-  }
 }
 </style>
 
@@ -1581,3 +1569,6 @@ Locke, E. A. (1976). The nature and causes of job satisfaction. In M. D. Dunnett
 Sokolova, M., & Lapalme, G. (2009). A systematic analysis of performance measures for classification tasks. Information Processing & Management, 45(4), 427–437. https://doi.org/10.1016/j.ipm.2009.03.002
 
 Stack Overflow. (2025). Stack Overflow annual developer survey 2025 [Data set]. https://survey.stackoverflow.co/
+
+### AI Use Statement
+AI was not used in completing this assignment.
