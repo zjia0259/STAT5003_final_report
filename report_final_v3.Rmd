@@ -1390,6 +1390,7 @@ ggplot(all_class, aes(x = Class, y = F1, fill = Model)) +
        x = NULL, y = "F1 Score") +
   theme_minimal(base_size = 12) + theme(legend.position = "top") + ylim(0, 1)
 ```
+
 #### Final Model Selection
 
 Based on the evaluation, **Gradient Boosting (GBM)** is selected as the final model:
