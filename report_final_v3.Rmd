@@ -1390,6 +1390,16 @@ ggplot(all_class, aes(x = Class, y = F1, fill = Model)) +
        x = NULL, y = "F1 Score") +
   theme_minimal(base_size = 12) + theme(legend.position = "top") + ylim(0, 1)
 ```
+#### Final Model Selection
+
+Based on the evaluation, **Gradient Boosting (GBM)** is selected as the final model:
+
+1. **Highest Macro F1** (`r gbm_res$overall_metrics$Macro_F1`): best balance across all three classes, which is critical given the class imbalance.
+2. **Highest Kappa** (`r gbm_res$overall_metrics$Kappa`): strongest agreement beyond chance among all five models.
+3. **Balanced per-class performance**: achieves reasonable F1 for all classes, including the challenging Dissatisfied minority.
+4. **Interpretability**: variable importance is readily available via GBM, providing actionable domain insights.
+
+All five models achieve Macro F1 in the 0.44–0.47 range, reflecting the inherent difficulty of predicting subjective job satisfaction from survey features. The relatively narrow performance gap between the simplest useful model (Logistic Regression, `r lr_res$overall_metrics$Macro_F1`) and the best (GBM, `r gbm_res$overall_metrics$Macro_F1`) suggests that the signal-to-noise ratio in the dataset is the primary bottleneck rather than model capacity. Nevertheless, ensemble methods (GBM, RF) consistently outperform linear and probabilistic baselines, and thoughtful imbalance handling — whether via class weights, Focal Loss, or SMOTE — is essential for achieving non-trivial Macro F1 in skewed multi-class settings.
 
 ### Final Results & Conclusion
 #### Key Findings: What Predicts Developer Job Satisfaction?
