@@ -1064,7 +1064,7 @@ plot_cm(gbm_res$confusion_matrix, "GBM — Confusion Matrix (Test Set)")
 
 #### Deep Neural Network (DNN)
 
-A 3-layer feedforward network (Linear → ReLU → Dropout per layer) trained with **Focal Loss** ($FL = -\alpha_t(1-p_t)^\gamma \log p_t$, $\gamma = 2.0$), which dynamically down-weights easy samples and focuses on hard examples. The Neutral class receives an additional 1.5× weight boost. DNN-specific preprocessing includes one-hot encoding, Z-score standardisation (parameters from training set only), and value clipping to [-5, 5].
+A 3-layer feedforward network (Linear → ReLU → Dropout per layer) trained with **Focal Loss** ($FL = -\alpha_t(1-p_t)^\gamma \log p_t$, $\gamma = 2.0$), which dynamically down-weights easy samples and focuses on hard examples. The Neutral class receives an additional 1.5× weight boost. DNN-specific preprocessing includes one-hot encoding, Z-score standardisation (parameters from training set only), and value clipping to [-5, 5] (see Model Improvement for tuning details).
 
 ```{r dnn-final-code, eval=FALSE}
 ### DNN: Final model with best hyperparameters (pre-computed)
@@ -1112,7 +1112,7 @@ plot_cm(dnn_res$confusion_matrix, "DNN — Confusion Matrix (Test Set)")
 
 #### Naive Bayes (NB)
 
-Naive Bayes estimates class-conditional feature probabilities under a conditional independence assumption. Since NB cannot accept case weights, class imbalance is addressed via **SMOTE oversampling** (over_ratio = 0.8) applied to the training set only.
+Naive Bayes estimates class-conditional feature probabilities under a conditional independence assumption. Since NB cannot accept case weights, class imbalance is addressed via **SMOTE oversampling** (over_ratio = 0.8) applied to the training set only(see Model Improvement for tuning details).
 
 ```{r nb-final-code, eval=FALSE}
 ### NB: Final model with best hyperparameters (pre-computed)
@@ -1143,7 +1143,7 @@ plot_cm(nb_res$confusion_matrix, "Naive Bayes — Confusion Matrix (Test Set)")
 
 #### Random Forest (RF)
 
-Random Forest aggregates predictions from an ensemble of de-correlated decision trees. Two imbalance strategies are compared: **power-based class weights** (power = 0.75/0.85/0.95) and **downsampling**. The best is selected via 3-fold CV Macro F1. The `extratrees` split rule provides extra randomisation.
+Random Forest aggregates predictions from an ensemble of de-correlated decision trees. Two imbalance strategies are compared: **power-based class weights** (power = 0.75/0.85/0.95) and **downsampling**. The best is selected via 3-fold CV Macro F1. The `extratrees` split rule provides extra randomisation(see Model Improvement for tuning details).
 
 ```{r rf-final-code, eval=FALSE}
 ### RF: Best model selected from multiple strategies (pre-computed)
@@ -1175,7 +1175,7 @@ plot_cm(rf_res$confusion_matrix, "Random Forest — Confusion Matrix (Test Set)"
 
 #### Multinomial Logistic Regression (LR)
 
-Multinomial logistic regression extends binary logistic regression to multiple classes via a softmax link. Features are dummy-encoded (`fullRank = TRUE`) and standardised (center + scale, parameters from training set only). Class imbalance is handled via **power-weighted case weights** (power = 0.75).
+Multinomial logistic regression extends binary logistic regression to multiple classes via a softmax link. Features are dummy-encoded (`fullRank = TRUE`) and standardised (center + scale, parameters from training set only). Class imbalance is handled via **power-weighted case weights** (power = 0.75) (see Model Improvement for tuning details).
 
 ```{r lr-final-code, eval=FALSE}
 ### LR: Final model with best hyperparameters (pre-computed)
