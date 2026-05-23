@@ -712,7 +712,7 @@ This suggests that the main modelling challenge is **weak class separability**. 
 
 ### Data Preprocessing
 
-This study uses the **Stack Overflow 2024 Developer Survey** (53,921 responses, 172 variables) to predict developer job satisfaction. The original 0–10 `JobSat` score is discretised into 3 classes: Dissatisfied (0–3), Neutral (4–6), and Satisfied (7–10).
+This study uses the **Stack Overflow 2025 Developer Survey** (49,191 responses, 172 variables) to predict developer job satisfaction. The original 0–10 `JobSat` score is discretised into 3 classes: Dissatisfied (0–3), Neutral (4–6), and Satisfied (7–10).
 
 ```{r preprocessing, eval=TRUE}
 ### ============================================================
@@ -1003,7 +1003,7 @@ kable(steps_df, align = "ll") %>%
   kable_styling(bootstrap_options = c("striped","hover","condensed"), full_width = TRUE, font_size = 12)
 ```
 
-After preprocessing: **`r nrow(train_3)`** training samples, **`r nrow(test_3)`** test samples, **`r ncol(train_3) - 1`** features.
+After preprocessing: **`r nrow(train_3)`** training samples, **`r nrow(test_3)`** test samples, **`r ncol(train_3) - 1`** features.(The rows lacking JobSat were deleted.)
 
 
 ### Model Fitting
@@ -1610,3 +1610,5 @@ LeCun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. Nature, 521(7553), 43
 Locke, E. A. (1976). The nature and causes of job satisfaction. In M. D. Dunnette (Ed.), Handbook of industrial and organizational psychology (pp. 1297–1349). Rand McNally.
 
 Sokolova, M., & Lapalme, G. (2009). A systematic analysis of performance measures for classification tasks. Information Processing & Management, 45(4), 427–437. https://doi.org/10.1016/j.ipm.2009.03.002
+
+Stack Overflow. (2025). Stack Overflow annual developer survey 2025 [Data set]. https://survey.stackoverflow.co/
