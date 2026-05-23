@@ -1402,20 +1402,15 @@ Based on the evaluation, **Gradient Boosting (GBM)** is selected as the final mo
 
 All five models achieve Macro F1 in the 0.44–0.47 range, reflecting the inherent difficulty of predicting subjective job satisfaction from survey features. The relatively narrow performance gap between the simplest useful model (Logistic Regression, `r lr_res$overall_metrics$Macro_F1`) and the best (GBM, `r gbm_res$overall_metrics$Macro_F1`) suggests that the signal-to-noise ratio in the dataset is the primary bottleneck rather than model capacity. Nevertheless, ensemble methods (GBM, RF) consistently outperform linear and probabilistic baselines, and thoughtful imbalance handling — whether via class weights, Focal Loss, or SMOTE — is essential for achieving non-trivial Macro F1 in skewed multi-class settings.
 
-### Final Results & Conclusion
-#### Key Findings: What Predicts Developer Job Satisfaction?
-Our 3-class Gradient Boosting Machine (GBM) model, tuned via stratified 3-fold cross-validation with Macro F1 as the primary metric, identified **the most influential predictors of developer job satisfaction** in the Stack Overflow 2025 Developer Survey. The model's variable importance ranking revealed two stories worth telling: an expected one and a surprising one.
+### Final Results and Conclusions
 
-##### The Expected: Career and Compensation Lead
-Unsurprisingly, the strongest predictor was **LeavingScore**—an ordinal feature extracted from the `NewRole` variable, reflecting a developer's intention to leave or change careers (importance = 100). It's almost certain that developers who considered changing careers had lower job satisfaction, consistent with common societal perceptions.
-Beyond LeavingScore, the next tier of predictors is more substantive:
+#### Optimal Model 
 
-- **Salary (log-transformed yearly compensation)** ranks second, but with importance ≈25 — only a quarter of LeavingScore's strength. Money matters, but it is far from the dominant force one might expect.
-- **Employment status (not employed)** and **YearsCode / WorkExp** follow, capturing the role of career stage and stability.
-- **Career Change Thoughts** (a separate `NewRole` category) reinforces that internal doubt is a strong satisfaction signal.
+The optimal model selected in this study was the three-class gradient boosting machine (GBM) model. This model was optimized through hierarchical three-fold cross-validation and used the macro F1 score as the main indicator, making it the most reliable among all trained models.
 
-##### The Surprise: AI Attitudes Permeate the Top 15
-The most distinctive finding of our model is that **five of the top 15 predictors are AI-related**:
+#### Phenomenon Revealed 
+
+Based on the GBM model, the 15 most influential factors on job satisfaction under the three-class classification are shown in the figure below.
 
 ```{r five of the top 15 predictors are AI-related, echo=FALSE, fig.height=4, fig.width=10}
 # rename group & distribution
@@ -1486,11 +1481,15 @@ p1 <- ggplot(fi_data, aes(x = reorder(variable, importance),
 p1
 ```
 
-In 2025, three years after the public release of ChatGPT, developers' attitudes toward artificial intelligence appear to be meaningfully associated with job satisfaction. In our model, several AI-related variables ranked among the top predictors, alongside more traditional factors such as career stage, compensation, and work experience. This suggests that AI-related perceptions have become a distinctive part of understanding developer workplace experiences in the current software development field.
+First, the strongest predictor is the LeavingScore, an ordinal feature extracted from the `NewRole` variable. It reflects the developer's willingness to leave or change careers. According to the data, respondents with thoughts of changing careers are likely to have lower job satisfaction. Considering the causal relationship between the two, this phenomenon clearly conforms to common social perception.
 
-#### The Deeper Insight: It Is Not AI Preference, but Perceived AI Threat
+Second, the impact of revealing factors on respondents' job satisfaction is generally expected. Salary ranks second in influence, significantly affecting respondents' living standards, and showing a strong correlation between salary level and job satisfaction. Employment status and years of work experience followed closely, reflecting that career stage and job stability influence people's judgment to some extent.
 
-The initial assumption of this experiment was that developers who accepted artificial intelligence had higher job satisfaction than those who rejected it. However, the reality was more complex. The figure below illustrates the analysis results of the participants' different attitudes towards artificial intelligence and their corresponding job satisfaction rates in this experiment.
+##### Latest Finding 
+
+Among the top 15 factors most significantly impacting job satisfaction, five are related to artificial intelligence. This has never occurred before 2025. This demonstrates that the existence of AI has already significantly impacted people's work. Especially in the current software development field, understanding AI has become a crucial component in comprehending the developer's work experience.
+
+The following chart illustrates the different attitudes participants had towards artificial intelligence and their corresponding job satisfaction analysis results.
 
 ```{r ai-satisfaction-plot, echo=FALSE, fig.height=4, fig.width=10}
 
@@ -1575,25 +1574,17 @@ p2
 
 ```
 
+This chart shows that developers who like and dislike artificial intelligence have similar, and relatively high, job satisfaction rates, ranging from 67% to 69%. The lowest satisfaction group is those who feel threatened by AI. In this group, only 59% are satisfied, and their dissatisfaction rate is also the highest, reaching 11%.
 
+These data suggest that simple likes or dislikes have little impact on job satisfaction. However, those who perceive AI as a direct threat to their future career development and feel fear are more dissatisfied with their jobs.
 
-**There is no significant association between disliking AI and lower job satisfaction.** Even developers who strongly dislike AI tools or distrust their accuracy still have a job satisfaction rate of 67% to 69%, similar to those with a neutral or slightly positive attitude towards AI.
+#### Conclusion
 
-**A stronger association exists between perceived AI threat and lower satisfaction.** The lowest satisfaction group consists of developers who perceive AI as a threat to their jobs. In this group, only 59% are satisfied, compared to 74% of developers with a very positive attitude towards AI. Furthermore, they also have the highest dissatisfaction rate, at 11%.
+In summary, the results of this study indicate that by 2025, developer job satisfaction will depend not only on traditional factors, such as career stage and salary, but also on whether developers feel safe in a workplace increasingly influenced by artificial intelligence.
 
-These data revised the initial assumptions. While simple likes and dislikes about artificial intelligence have little impact on job satisfaction, job satisfaction may decrease if developers perceive AI as a direct threat to their future career development.
+Career trajectory remains the strongest indicator. Whether employees consider leaving, their working hours, and whether they have questioned their career path are the most important predictors in the model. Compensation is also important, but not as much as indicators related to career development.
 
-#### Conclusion: Job Security and AI Perceptions are Crucial
-
-The final answer, combining anticipated workplace factors with a new AI-related pattern, addresses the initial question of what the predictors of developer job satisfaction in 2025 are:
-
-1. **Career trajectories remain the strongest indicator.** Whether employees consider leaving, their working hours, and whether they have questioned their career path are the most important predictors in the model. Compensation is also important, but less so than indicators related to career development.
-
-2. **AI-related perceptions have now become a measurable measure of job satisfaction.** Five of the top 15 predictors are AI-related variables, indicating that attitudes towards AI are crucial to understanding the developer experience in 2025.
-
-3. **The key difference lies in perceived threats, not simple preferences.** Developers may dislike, distrust, or be neutral about AI, but still report relatively high satisfaction. The group with significantly lower job satisfaction was those who perceived artificial intelligence as a threat to their jobs.
-
-In conclusion, the results of this study suggest that in 2025, developer job satisfaction will depend not only on traditional factors such as career stage and salary, but also on whether developers feel safe in a workplace increasingly impacted by AI.
+Secondly, artificial intelligence can now objectively influence workers' job satisfaction. Furthermore, people's subjective attitudes towards artificial intelligence are also correlated with their job satisfaction; those who feel their jobs are threatened by AI are more likely to be dissatisfied with their jobs than those who simply like or dislike AI.
 
 
 ### References
