@@ -1,11 +1,12 @@
 ---
-title: 'Predicting Developer Job Satisfaction: A Multi-Model Classification Study'
+title: "Predicting Developer Job Satisfaction: A Multi-Model Classification Study"
 author: "Group W11G03"
 output:
   html_document:
     code_folding: hide
     number_sections: true
   pdf_document: default
+  word_document: default
 ---
 
 <style>
@@ -16,20 +17,23 @@ h1.title {
 body {
     font-size: 11px;
 }
-@media print {
-  .code-folding-btn, .btn-group, .nav-tabs, .tab-content > .tab-pane {
-    display: block !important;
-  }
-  /* Hide all code chunks when printing to keep page count down */
-  pre.r, pre.sourceCode, .sourceCode {
-    display: none !important;
-  }
-  /* But keep output (tables, plots) visible */
-  .kable_wrapper, .figure, img, table {
-    display: block !important;
-  }
-}
 </style>
+
+<script>
+// Auto-expand all code blocks before printing
+window.addEventListener('beforeprint', function() {
+  // For rmarkdown code_folding
+  document.querySelectorAll('.collapse').forEach(function(el) {
+    el.classList.add('in');
+    el.style.height = 'auto';
+  });
+  // For Quarto details/summary
+  document.querySelectorAll('details').forEach(function(el) {
+    el.open = true;
+    el.setAttribute('open', '');
+  });
+});
+</script>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
