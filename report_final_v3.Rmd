@@ -1406,7 +1406,7 @@ All five models achieve Macro F1 in the 0.44–0.47 range, reflecting the inhere
 Our 3-class Gradient Boosting Machine (GBM) model, tuned via stratified 3-fold cross-validation with Macro F1 as the primary metric, identified **the most influential predictors of developer job satisfaction** in the Stack Overflow 2025 Developer Survey. The model's variable importance ranking revealed two stories worth telling: an expected one and a surprising one.
 
 ##### The Expected: Career and Compensation Lead
-Unsurprisingly, the strongest predictor is **LeavingScore** — an ordinal feature we engineered from the `NewRole` variable that captures a developer's intention to leave or change careers (importance = 100). Developers who have considered switching careers are, almost by definition, less satisfied with their current jobs. While this overlap between leaving intent and dissatisfaction is a methodological caveat we openly acknowledge, the feature remains the model's strongest signal.
+Unsurprisingly, the strongest predictor was **LeavingScore**—an ordinal feature extracted from the `NewRole` variable, reflecting a developer's intention to leave or change careers (importance = 100). It's almost certain that developers who considered changing careers had lower job satisfaction, consistent with common societal perceptions.
 Beyond LeavingScore, the next tier of predictors is more substantive:
 
 - **Salary (log-transformed yearly compensation)** ranks second, but with importance ≈25 — only a quarter of LeavingScore's strength. Money matters, but it is far from the dominant force one might expect.
