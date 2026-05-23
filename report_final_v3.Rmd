@@ -19,22 +19,6 @@ body {
 }
 </style>
 
-<script>
-// Auto-expand all code blocks before printing
-window.addEventListener('beforeprint', function() {
-  // For rmarkdown code_folding
-  document.querySelectorAll('.collapse').forEach(function(el) {
-    el.classList.add('in');
-    el.style.height = 'auto';
-  });
-  // For Quarto details/summary
-  document.querySelectorAll('details').forEach(function(el) {
-    el.open = true;
-    el.setAttribute('open', '');
-  });
-});
-</script>
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo = TRUE, message = FALSE, warning = FALSE,
@@ -1585,3 +1569,6 @@ Locke, E. A. (1976). The nature and causes of job satisfaction. In M. D. Dunnett
 Sokolova, M., & Lapalme, G. (2009). A systematic analysis of performance measures for classification tasks. Information Processing & Management, 45(4), 427–437. https://doi.org/10.1016/j.ipm.2009.03.002
 
 Stack Overflow. (2025). Stack Overflow annual developer survey 2025 [Data set]. https://survey.stackoverflow.co/
+
+### AI Use Statement
+AI was not used in completing this assignment.
