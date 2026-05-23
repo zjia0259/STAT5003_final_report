@@ -57,39 +57,7 @@ In this project, we build the job satisfaction of developers into a supervised m
 
 **Can we predict whether a developer is dissatisfied, neutral, or satisfied with their job using their professional background, working conditions, technical usage patterns, and attitudes toward AI tools?**
 
-Two target schemes are used to compare a detailed satisfaction scale with a simpler primary target:
-
-```{r target-scheme-table, echo=FALSE}
-target_tbl <- data.frame(
-  Scheme = c("5-class", "3-class (primary)"),
-  Mapping = c(
-    "0--1 / 2--3 / 4--6 / 7--8 / 9--10",
-    "0--3 / 4--6 / 7--10"
-  ),
-  Role = c(
-    "Comparison target; keeps finer satisfaction levels.",
-    "Main target; broader and more stable classes."
-  ),
-  check.names = FALSE
-)
-
-kable(
-  target_tbl,
-  align = "c",
-  booktabs = TRUE,
-  col.names = c("Target scheme", "Score mapping", "Role in analysis")
-) %>%
-  kable_styling(
-    full_width = TRUE,
-    font_size = 9,
-    position = "center",
-    bootstrap_options = c("condensed", "striped")
-  ) %>%
-  column_spec(1, bold = TRUE, width = "3cm") %>%
-  column_spec(2, width = "5cm") %>%
-  column_spec(3, width = "7cm") %>%
-  row_spec(0, bold = TRUE, align = "center")
-```
+In this analysis, job satisfaction is divided into three outcome categories: **Dissatisfied (0--3)**, **Neutral (4--6)** and **Satisfied (7--10)**. Although a five-category grouping can retain more detail from the original rating scale, it is not used for modelling because adjacent satisfaction levels, such as dissatisfied and very dissatisfied, may be difficult to distinguish using the available survey variables. The three-class outcome is more suitable for this study because it retains the main differences in job satisfaction while providing a clearer and more interpretable target for prediction.
 
 #### Motivation and Stakeholders
 
