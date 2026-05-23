@@ -57,39 +57,7 @@ In this project, we build the job satisfaction of developers into a supervised m
 
 **Can we predict whether a developer is dissatisfied, neutral, or satisfied with their job using their professional background, working conditions, technical usage patterns, and attitudes toward AI tools?**
 
-Two target schemes are used to compare a detailed satisfaction scale with a simpler primary target:
-
-```{r target-scheme-table, echo=FALSE}
-target_tbl <- data.frame(
-  Scheme = c("5-class", "3-class (primary)"),
-  Mapping = c(
-    "0--1 / 2--3 / 4--6 / 7--8 / 9--10",
-    "0--3 / 4--6 / 7--10"
-  ),
-  Role = c(
-    "Comparison target; keeps finer satisfaction levels.",
-    "Main target; broader and more stable classes."
-  ),
-  check.names = FALSE
-)
-
-kable(
-  target_tbl,
-  align = "c",
-  booktabs = TRUE,
-  col.names = c("Target scheme", "Score mapping", "Role in analysis")
-) %>%
-  kable_styling(
-    full_width = TRUE,
-    font_size = 9,
-    position = "center",
-    bootstrap_options = c("condensed", "striped")
-  ) %>%
-  column_spec(1, bold = TRUE, width = "3cm") %>%
-  column_spec(2, width = "5cm") %>%
-  column_spec(3, width = "7cm") %>%
-  row_spec(0, bold = TRUE, align = "center")
-```
+In this analysis, job satisfaction is divided into three outcome categories: **Dissatisfied (0--3)**, **Neutral (4--6)** and **Satisfied (7--10)**. Although a five-category grouping can retain more detail from the original rating scale, it is not used for modelling because adjacent satisfaction levels, such as dissatisfied and very dissatisfied, may be difficult to distinguish using the available survey variables. The three-class outcome is more suitable for this study because it retains the main differences in job satisfaction while providing a clearer and more interpretable target for prediction.
 
 #### Motivation and Stakeholders
 
@@ -145,7 +113,7 @@ kable(
 
 This section explains why the Stack Overflow Developer Survey is suitable for a multi-class classification project on developer job satisfaction. The original `JobSat` score is a self-reported 0-10 satisfaction score. In this project, it is discretised into 3 classes: Dissatisfied (0-3), Neutral (4-6), and Satisfied (7-10).
 
-```{r dataset-justification, eval=TRUE, fig.height=4.8}
+```{r dataset-justification, eval=TRUE, fig.width=7.0, fig.height=3.35, out.width="76%", fig.align="center"}
 ### ============================================================
 ### Dataset suitability evidence
 ### ============================================================
@@ -173,14 +141,16 @@ df <- df %>%
 
 ### --- Step 2: Summarise dataset size and feature types ---
 
-num_features <- sum(sapply(df, is.numeric))
-cat_features <- sum(sapply(df, is.character))
-other_features <- ncol(df) - num_features - cat_features
+feature_cols <- setdiff(names(df), "JobSat_Class")
+
+num_features <- sum(sapply(df[feature_cols], is.numeric))
+cat_features <- sum(sapply(df[feature_cols], is.character))
+other_features <- length(feature_cols) - num_features - cat_features
 valid_target_n <- sum(!is.na(df$JobSat_Class))
 
 size_df <- data.frame(
   Metric = c("Rows", "Variables"),
-  Count = c(nrow(df), ncol(df))
+  Count = c(nrow(df), length(feature_cols))
 )
 
 feature_type_df <- data.frame(
@@ -224,7 +194,7 @@ p_large <- ggplot(size_df, aes(x = Metric, y = Count, fill = Metric)) +
   geom_text(
     aes(label = comma(Count)),
     vjust = -0.3,
-    size = 3.3,
+    size = 2.6,
     fontface = "bold"
   ) +
   scale_y_continuous(
@@ -237,18 +207,22 @@ p_large <- ggplot(size_df, aes(x = Metric, y = Count, fill = Metric)) +
     x = NULL,
     y = "Count"
   ) +
-  theme_minimal(base_size = 11) +
+  theme_minimal(base_size = 8.5) +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.4)
-  )
+  plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+  plot.subtitle = element_text(size = 8.5),
+  axis.title = element_text(size = 8.5),
+  axis.text = element_text(size = 8),
+  plot.margin = margin(2, 2, 2, 2),
+  panel.border = element_rect(color = "black", fill = NA, linewidth = 0.35)
+)
 
 p_messy <- ggplot(missing_df, aes(x = MissingRate, y = reorder(Variable, MissingRate))) +
   geom_col(fill = "#E15759", width = 0.65) +
   geom_text(
     aes(label = percent(MissingRate, accuracy = 0.1)),
     hjust = -0.05,
-    size = 2.9
+    size = 2.4
   ) +
   scale_x_continuous(
     labels = percent_format(),
@@ -260,18 +234,22 @@ p_messy <- ggplot(missing_df, aes(x = MissingRate, y = reorder(Variable, Missing
     x = "Missing rate",
     y = NULL
   ) +
-  theme_minimal(base_size = 11) +
+  theme_minimal(base_size = 8.5) +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.4)
-  )
+  plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+  plot.subtitle = element_text(size = 8.5),
+  axis.title = element_text(size = 8.5),
+  axis.text = element_text(size = 8),
+  plot.margin = margin(2, 2, 2, 2),
+  panel.border = element_rect(color = "black", fill = NA, linewidth = 0.35)
+)
 
 p_complex <- ggplot(feature_type_df, aes(x = Type, y = Count, fill = Type)) +
   geom_col(show.legend = FALSE, width = 0.6) +
   geom_text(
     aes(label = Count),
     vjust = -0.3,
-    size = 3.3,
+    size = 2.6,
     fontface = "bold"
   ) +
   scale_y_continuous(
@@ -283,23 +261,28 @@ p_complex <- ggplot(feature_type_df, aes(x = Type, y = Count, fill = Type)) +
     x = NULL,
     y = "Feature count"
   ) +
-  theme_minimal(base_size = 11) +
+  theme_minimal(base_size = 8.5) +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.4)
-  )
+  plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+  plot.subtitle = element_text(size = 8.5),
+  axis.title = element_text(size = 8.5),
+  axis.text = element_text(size = 8),
+  plot.margin = margin(2, 2, 2, 2),
+  panel.border = element_rect(color = "black", fill = NA, linewidth = 0.35)
+)
 
 p_target <- ggplot(target_df, aes(x = JobSat_Class, y = Proportion, fill = JobSat_Class)) +
   geom_col(show.legend = FALSE, width = 0.65) +
   geom_text(
     aes(label = paste0(comma(n), "\n", percent(Proportion, accuracy = 0.1))),
     vjust = -0.2,
-    size = 3.0
+    size = 2.4
   ) +
   scale_y_continuous(
-    labels = percent_format(),
-    limits = c(0, max(target_df$Proportion) * 1.3)
-  ) +
+  labels = percent_format(),
+  limits = c(0, max(target_df$Proportion) * 1.45),
+  expand = expansion(mult = c(0, 0.05))
+) +
   scale_fill_manual(values = c(
     "Dissatisfied" = "#C62828",
     "Neutral" = "#FB8C00",
@@ -311,13 +294,19 @@ p_target <- ggplot(target_df, aes(x = JobSat_Class, y = Proportion, fill = JobSa
     x = NULL,
     y = "Proportion"
   ) +
-  theme_minimal(base_size = 11) +
+  theme_minimal(base_size = 8.5) +
   theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.4)
-  )
+  plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+  plot.subtitle = element_text(size = 8.5),
+  axis.title = element_text(size = 8.5),
+  axis.text = element_text(size = 8),
+  plot.margin = margin(2, 2, 2, 2),
+  panel.border = element_rect(color = "black", fill = NA, linewidth = 0.35)
+)
 
-(p_large + p_messy) / (p_complex + p_target)
+(p_large + p_messy) / (p_complex + p_target) +
+  plot_layout(heights = c(1, 1)) &
+  theme(plot.margin = margin(1, 1, 1, 1))
 ```
 
 The table below summarises the dataset suitability evidence:
@@ -326,7 +315,7 @@ The table below summarises the dataset suitability evidence:
 dataset_summary <- data.frame(
   Requirement = c("Large", "Messy", "Complex", "Multi-class"),
   Evidence = c(
-    paste0(format(nrow(df), big.mark = ","), " rows and ", ncol(df), " variables"),
+    paste0(format(nrow(df), big.mark = ","), " rows and ", length(feature_cols), " variables"),
     "Important variables such as JobSat, salary, organisation size and AI-related fields contain missing values",
     paste0(num_features, " numeric variables and ", cat_features, " categorical variables"),
     paste0(format(valid_target_n, big.mark = ","), " valid JobSat responses recoded into 3 classes")
@@ -343,20 +332,17 @@ kable(dataset_summary, align = "lll") %>%
   kable_styling(
     bootstrap_options = c("striped","hover","condensed"),
     full_width = TRUE,
-    font_size = 12
+    font_size = 9
   )
 ```
 
-Overall, the dataset satisfies four project requirements. It is **large** because it contains **`r format(nrow(df), big.mark = ",")`** rows and **`r ncol(df)`** variables. It is **messy** because several important variables contain missing values. It is **complex** because it contains both numeric and categorical variables. It also supports a **multi-class classification task** because the original `JobSat` score is recoded into Dissatisfied, Neutral, and Satisfied. Since the target distribution is imbalanced, later model evaluation should use Macro F1 and Kappa rather than accuracy alone.
-
-<div style="page-break-after: always;"></div>
-
+Overall, the dataset satisfies four project requirements. It is **large** because it contains **`r format(nrow(df), big.mark = ",")`** rows and **`r length(feature_cols)`** variables. It is **messy** because several important variables contain missing values. It is **complex** because it contains both numeric and categorical variables. It also supports a **multi-class classification task** because the original `JobSat` score is recoded into Dissatisfied, Neutral, and Satisfied. Since the target distribution is imbalanced, later model evaluation should use Macro F1 and Kappa rather than accuracy alone.
 
 ### EDA & Insights
 
 This section explores whether the available predictors can clearly separate the three job satisfaction classes. The dataset is large and contains many variables, but the classification task can still be difficult if dissatisfied, neutral, and satisfied developers share similar feature patterns. Salary, work experience and PCA are used to examine class overlap from both individual-variable and multi-variable perspectives.
 
-```{r eda-insights, eval=TRUE, fig.height=5.8}
+```{r eda-insights, eval=TRUE, fig.width=7.2, fig.height=4.1, out.width="78%", fig.align="center"}
 ### ============================================================
 ### EDA: feature overlap and class separability
 ### ============================================================
@@ -497,11 +483,11 @@ p_salary <- ggplot(plot_data, aes(x = JobSat_Class, y = LogSalary, fill = JobSat
     "Satisfied" = "#1565C0"
   )) +
   labs(
-    title = "Salary by Job Satisfaction Class",
+    title = "Salary by JobSat Class",
     x = NULL,
     y = "Log yearly compensation"
   ) +
-  theme_minimal(base_size = 11) +
+  theme_minimal(base_size = 10) +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold"),
     panel.border = element_rect(color = "black", fill = NA, linewidth = 0.4)
@@ -515,11 +501,11 @@ p_work <- ggplot(plot_data, aes(x = JobSat_Class, y = WorkExp, fill = JobSat_Cla
     "Satisfied" = "#1565C0"
   )) +
   labs(
-    title = "Work Experience by Job Satisfaction Class",
+    title = "Experience by JobSat Class",
     x = NULL,
     y = "Years of work experience"
   ) +
-  theme_minimal(base_size = 11) +
+  theme_minimal(base_size = 10) +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold"),
     panel.border = element_rect(color = "black", fill = NA, linewidth = 0.4)
@@ -640,7 +626,7 @@ p_pca <- ggplot() +
     y = paste0("PC2 (", var_exp[2], "%)"),
     color = NULL
   ) +
-  theme_minimal(base_size = 11) +
+  theme_minimal(base_size = 10) +
   theme(
     plot.title = element_text(
       hjust = 0.5,
@@ -654,7 +640,8 @@ p_pca <- ggplot() +
   )
 
 (p_salary + p_work) / plot_spacer() / p_pca +
-  plot_layout(heights = c(0.72, 0.08, 1.25))
+  plot_layout(heights = c(0.62, 0.03, 0.72)) &
+  theme(plot.margin = margin(1, 1, 1, 1))
 ```
 
 The table below summarises the main EDA findings:
@@ -682,7 +669,7 @@ kable(eda_summary, align = "lll") %>%
   kable_styling(
     bootstrap_options = c("striped","hover","condensed"),
     full_width = TRUE,
-    font_size = 12
+    font_size = 9
   )
 ```
 
@@ -690,7 +677,6 @@ The EDA shows that salary and work experience differ slightly across the three s
 
 This suggests that the main modelling challenge is **weak class separability**. The dataset contains useful signals, but these signals are spread across many predictors rather than forming clear class boundaries. This explains why later models should be compared using Macro F1 and Kappa instead of accuracy alone.
 
-<div style="page-break-after: always;"></div>
 
 ### Data Preprocessing
 
@@ -1046,7 +1032,7 @@ plot_cm(gbm_res$confusion_matrix, "GBM — Confusion Matrix (Test Set)")
 
 #### Deep Neural Network (DNN)
 
-A 3-layer feedforward network (Linear → ReLU → Dropout per layer) trained with **Focal Loss** ($FL = -\alpha_t(1-p_t)^\gamma \log p_t$, $\gamma = 2.0$), which dynamically down-weights easy samples and focuses on hard examples. The Neutral class receives an additional 1.5× weight boost. DNN-specific preprocessing includes one-hot encoding, Z-score standardisation (parameters from training set only), and value clipping to [-5, 5].
+A 3-layer feedforward network (Linear → ReLU → Dropout per layer) trained with **Focal Loss** ($FL = -\alpha_t(1-p_t)^\gamma \log p_t$, $\gamma = 2.0$), which dynamically down-weights easy samples and focuses on hard examples. The Neutral class receives an additional 1.5× weight boost. DNN-specific preprocessing includes one-hot encoding, Z-score standardisation (parameters from training set only), and value clipping to [-5, 5] (see Model Improvement for tuning details).
 
 ```{r dnn-final-code, eval=FALSE}
 ### DNN: Final model with best hyperparameters (pre-computed)
@@ -1094,7 +1080,7 @@ plot_cm(dnn_res$confusion_matrix, "DNN — Confusion Matrix (Test Set)")
 
 #### Naive Bayes (NB)
 
-Naive Bayes estimates class-conditional feature probabilities under a conditional independence assumption. Since NB cannot accept case weights, class imbalance is addressed via **SMOTE oversampling** (over_ratio = 0.8) applied to the training set only.
+Naive Bayes estimates class-conditional feature probabilities under a conditional independence assumption. Since NB cannot accept case weights, class imbalance is addressed via **SMOTE oversampling** (over_ratio = 0.8) applied to the training set only(see Model Improvement for tuning details).
 
 ```{r nb-final-code, eval=FALSE}
 ### NB: Final model with best hyperparameters (pre-computed)
@@ -1125,7 +1111,7 @@ plot_cm(nb_res$confusion_matrix, "Naive Bayes — Confusion Matrix (Test Set)")
 
 #### Random Forest (RF)
 
-Random Forest aggregates predictions from an ensemble of de-correlated decision trees. Two imbalance strategies are compared: **power-based class weights** (power = 0.75/0.85/0.95) and **downsampling**. The best is selected via 3-fold CV Macro F1. The `extratrees` split rule provides extra randomisation.
+Random Forest aggregates predictions from an ensemble of de-correlated decision trees. Two imbalance strategies are compared: **power-based class weights** (power = 0.75/0.85/0.95) and **downsampling**. The best is selected via 3-fold CV Macro F1. The `extratrees` split rule provides extra randomisation(see Model Improvement for tuning details).
 
 ```{r rf-final-code, eval=FALSE}
 ### RF: Best model selected from multiple strategies (pre-computed)
@@ -1157,7 +1143,7 @@ plot_cm(rf_res$confusion_matrix, "Random Forest — Confusion Matrix (Test Set)"
 
 #### Multinomial Logistic Regression (LR)
 
-Multinomial logistic regression extends binary logistic regression to multiple classes via a softmax link. Features are dummy-encoded (`fullRank = TRUE`) and standardised (center + scale, parameters from training set only). Class imbalance is handled via **power-weighted case weights** (power = 0.75).
+Multinomial logistic regression extends binary logistic regression to multiple classes via a softmax link. Features are dummy-encoded (`fullRank = TRUE`) and standardised (center + scale, parameters from training set only). Class imbalance is handled via **power-weighted case weights** (power = 0.75) (see Model Improvement for tuning details).
 
 ```{r lr-final-code, eval=FALSE}
 ### LR: Final model with best hyperparameters (pre-computed)
@@ -1384,47 +1370,22 @@ Based on the evaluation, **Gradient Boosting (GBM)** is selected as the final mo
 
 All five models achieve Macro F1 in the 0.44–0.47 range, reflecting the inherent difficulty of predicting subjective job satisfaction from survey features. The relatively narrow performance gap between the simplest useful model (Logistic Regression, `r lr_res$overall_metrics$Macro_F1`) and the best (GBM, `r gbm_res$overall_metrics$Macro_F1`) suggests that the signal-to-noise ratio in the dataset is the primary bottleneck rather than model capacity. Nevertheless, ensemble methods (GBM, RF) consistently outperform linear and probabilistic baselines, and thoughtful imbalance handling — whether via class weights, Focal Loss, or SMOTE — is essential for achieving non-trivial Macro F1 in skewed multi-class settings.
 
-
-### References
-
-Agresti, A. (2018). An introduction to categorical data analysis (3rd ed.). Wiley.
-
-Breiman, L. (2001). Random forests. Machine Learning, 45(1), 5–32. https://doi.org/10.1023/A:1010933404324
-
-Friedman, J. H. (2001). Greedy function approximation: A gradient boosting machine. The Annals of Statistics, 29(5), 1189–1232. https://doi.org/10.1214/aos/1013203451
-
-Hand, D. J., & Yu, K. (2001). Idiot’s Bayes—not so stupid after all? International Statistical Review, 69(3), 385–398. https://doi.org/10.1111/j.1751-5823.2001.tb00465.x
-
-LeCun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. Nature, 521(7553), 436–444. https://doi.org/10.1038/nature14539
-
-Locke, E. A. (1976). The nature and causes of job satisfaction. In M. D. Dunnette (Ed.), Handbook of industrial and organizational psychology (pp. 1297–1349). Rand McNally.
-
-Sokolova, M., & Lapalme, G. (2009). A systematic analysis of performance measures for classification tasks. Information Processing & Management, 45(4), 427–437. https://doi.org/10.1016/j.ipm.2009.03.002
-# Final Results & Conclusion
-
-## Key Findings: What Predicts Developer Job Satisfaction?
-
+### Final Results & Conclusion
+#### Key Findings: What Predicts Developer Job Satisfaction?
 Our 3-class Gradient Boosting Machine (GBM) model, tuned via stratified 3-fold cross-validation with Macro F1 as the primary metric, identified **the most influential predictors of developer job satisfaction** in the Stack Overflow 2025 Developer Survey. The model's variable importance ranking revealed two stories worth telling: an expected one and a surprising one.
 
-### The Expected: Career and Compensation Lead
-
+##### The Expected: Career and Compensation Lead
 Unsurprisingly, the strongest predictor is **LeavingScore** — an ordinal feature we engineered from the `NewRole` variable that captures a developer's intention to leave or change careers (importance = 100). Developers who have considered switching careers are, almost by definition, less satisfied with their current jobs. While this overlap between leaving intent and dissatisfaction is a methodological caveat we openly acknowledge, the feature remains the model's strongest signal.
-
 Beyond LeavingScore, the next tier of predictors is more substantive:
 
 - **Salary (log-transformed yearly compensation)** ranks second, but with importance ≈25 — only a quarter of LeavingScore's strength. Money matters, but it is far from the dominant force one might expect.
 - **Employment status (not employed)** and **YearsCode / WorkExp** follow, capturing the role of career stage and stability.
 - **Career Change Thoughts** (a separate `NewRole` category) reinforces that internal doubt is a strong satisfaction signal.
 
-### The Surprise: AI Attitudes Permeate the Top 15
-
+##### The Surprise: AI Attitudes Permeate the Top 15
 The most distinctive finding of our model is that **five of the top 15 predictors are AI-related**:
+
 ```{r five of the top 15 predictors are AI-related, echo=FALSE, fig.height=4, fig.width=10}
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-
-
 # rename group & distribution
 fi_data <- data.frame(
   variable = c(
@@ -1478,41 +1439,28 @@ p1 <- ggplot(fi_data, aes(x = reorder(variable, importance),
   labs(x = NULL, y = "Importance",
        title = "What Predicts Job Satisfaction?",
        subtitle = "5 of the Top 15 predictors are AI-related (orange)") +
-  theme_minimal(base_size = 18) +
+  theme_minimal(base_size = 15) +
   theme(
     legend.position = "top",
     legend.title = element_blank(),
-    plot.title = element_text(face = "bold", size = 20, color = "#1f2a44"),
-    plot.subtitle = element_text(size = 12, color = "#6b7280", 
-                                 margin = margin(b = 10)),
+    plot.title = element_text(face = "bold", size = 13, color = "#1f2a44", hjust = 0.5),
+    plot.subtitle = element_text(size = 10, color = "#6b7280", 
+                                 margin = margin(b = 10), hjust = 0.5),
     axis.text.y = element_text(size = 10),
-    axis.text.x = element_text(size = 12),
+    axis.text.x = element_text(size = 10),
     panel.grid.minor = element_blank()
   )
 
 p1
 ```
 
-| Rank | Feature | Description |
-|------|---------|-------------|
-| 7 | AIThreat = "Yes" | Feels AI is a threat to their job |
-| 12 | AISent = "Very unfavorable" | Strongly dislikes AI tools |
-| 13 | AIThreat = "I'm not sure" | Uncertain about AI's threat |
-| 14 | AISent = "Very favorable" | Loves AI tools |
-| 15 | AIAcc = "Highly distrust" | Highly distrusts AI accuracy |
+In 2025, three years after the public release of ChatGPT, developers' attitudes toward artificial intelligence were found to influence employee job satisfaction in a way that rivaled traditional factors such as seniority or the number of tools available. This finding, absent from surveys prior to 2023, has now become a unique characteristic of the current software development field.
 
-In 2025 — three years after the public release of ChatGPT — a developer's stance toward AI is now as predictive of job satisfaction as classical factors like tenure or tool count. This is a finding that would not have appeared in pre-2023 survey analyses, making it uniquely characteristic of the current moment in software development.
-
-## The Deeper Insight: It's Not AI — It's the Fear of AI
+#### The Deeper Insight: It's Not AI — It's the Fear of AI
 
 To understand *how* AI attitudes influence satisfaction, we examined the actual job satisfaction distribution within each AI-attitude group in the training set. The results challenged our initial hypothesis.
 
 ```{r ai-satisfaction-plot, echo=FALSE, fig.height=4, fig.width=10}
-# (Insert the AI attitude vs satisfaction plot here)
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-
 
 # rename group & distribution
 fi_data <- data.frame(
@@ -1587,8 +1535,8 @@ p2 <-ggplot(ai_long, aes(x = ai_attitude, y = pct, fill = satisfaction)) +
   theme(
     legend.position = "top",
     legend.title = element_blank(),
-    plot.title = element_text(face = "bold", size = 22, color = "#1f2a44"),
-    axis.text = element_text(size = 14)
+    plot.title = element_text(face = "bold", size = 15, color = "#1f2a44",hjust = 0.5),
+    axis.text = element_text(size = 10)
   )
 
 p2
@@ -1596,15 +1544,12 @@ p2
 ```
 
 We initially expected a simple narrative: developers who embrace AI would be much more satisfied than those who reject it. The data tells a more nuanced story.
-
 **Disliking AI is not the problem.** Developers who strongly dislike AI or distrust its accuracy still report satisfaction rates of 67–69% — barely different from neutral or AI-positive developers. Personal preference about AI tools, it turns out, has remarkably little impact on overall job satisfaction.
-
 **Fearing AI is the problem.** The single group with markedly lower satisfaction is those who feel AI **threatens** their job: only 59% are satisfied (vs 74% for AI enthusiasts), and 11% are actively dissatisfied — the highest rate in our analysis. The distinguishing factor is not opinion, but **existential anxiety** about being replaced.
 
 This reframes the finding entirely. The AI revolution is not creating a binary of "winners who embrace AI" and "losers who reject it". Instead, it is creating a divide between those who feel **secure in their role** and those who feel **threatened by their own tools**. The same person can dislike AI tools and still love their job — as long as they do not feel their livelihood is at stake.
 
-## Conclusion: Mindset Is the New Salary
-
+#### Conclusion: Mindset Is the New Salary
 Returning to our research question — *what predicts developer job satisfaction in 2025?* — our final answer combines an expected finding with a surprising one:
 
 1. **Career trajectory matters most.** Whether someone is considering leaving, how long they have coded, and whether they have doubted their career path are the most powerful predictors. Compensation matters, but ranks second.
@@ -1613,7 +1558,23 @@ Returning to our research question — *what predicts developer job satisfaction
 
 3. **The distinction is fear, not preference.** Developers can dislike, distrust, or be indifferent to AI and still be satisfied at work. It is the *fear of replacement* that correlates with dissatisfaction.
 
-For the many students in our audience who will soon enter the technology workforce, our model suggests three concrete questions to consider before accepting any offer: *Does this role match where I want my career to go? Will I be paid fairly?* And — newly relevant in 2025 — ***Will this workplace help me grow alongside AI, rather than be threatened by it?***
-
+For the many students about to enter the tech industry, our model suggests they consider the following three specific questions before accepting any job offer: Does this position align with my career development plan? Is my salary reasonable? Most importantly, can this workplace help me grow alongside artificial intelligence, rather than be threatened by it?
 In an era when one-third of our waking lives is spent at work, and when the nature of that work is being rewritten by AI, mindset has become as important as salary. The data has spoken; the choice is now ours.
 
+
+
+### References
+
+Agresti, A. (2018). An introduction to categorical data analysis (3rd ed.). Wiley.
+
+Breiman, L. (2001). Random forests. Machine Learning, 45(1), 5–32. https://doi.org/10.1023/A:1010933404324
+
+Friedman, J. H. (2001). Greedy function approximation: A gradient boosting machine. The Annals of Statistics, 29(5), 1189–1232. https://doi.org/10.1214/aos/1013203451
+
+Hand, D. J., & Yu, K. (2001). Idiot’s Bayes—not so stupid after all? International Statistical Review, 69(3), 385–398. https://doi.org/10.1111/j.1751-5823.2001.tb00465.x
+
+LeCun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. Nature, 521(7553), 436–444. https://doi.org/10.1038/nature14539
+
+Locke, E. A. (1976). The nature and causes of job satisfaction. In M. D. Dunnette (Ed.), Handbook of industrial and organizational psychology (pp. 1297–1349). Rand McNally.
+
+Sokolova, M., & Lapalme, G. (2009). A systematic analysis of performance measures for classification tasks. Information Processing & Management, 45(4), 427–437. https://doi.org/10.1016/j.ipm.2009.03.002
