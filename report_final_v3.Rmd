@@ -328,7 +328,7 @@ Overall, the dataset satisfies four project requirements. It is **large** becaus
 
 ### EDA & Insights
 
-This section explores whether the available predictors can clearly separate the three job satisfaction classes. The dataset is large and contains many variables, but the classification task can still be difficult if dissatisfied, neutral, and satisfied developers share similar feature patterns. Salary, work experience and PCA are used to examine class overlap from both individual-variable and multi-variable perspectives.
+This section explores whether the existing predictors can clearly distinguish three levels of job satisfaction. The dataset is large and contains many variables, but if the dissatisfied, neutral and satisfied developers have similar characteristic patterns, the classification task will still be difficult. Salary, work experience and PCA are used to examine class overlap from both individual-variable and multi-variable perspectives.
 
 ```{r eda-insights, eval=TRUE, fig.width=7.2, fig.height=4.1, out.width="78%", fig.align="center"}
 ### ============================================================
@@ -661,9 +661,9 @@ kable(eda_summary, align = "lll") %>%
   )
 ```
 
-The EDA shows that salary and work experience differ slightly across the three satisfaction groups, but the distributions overlap heavily. The PCA projection gives the same message from a wider feature space. After numeric variables are capped and imputed, and categorical variables are grouped and dummy encoded, the first two principal components still show strong overlap between dissatisfied, neutral, and satisfied developers.
+The EDA shows that salary and work experience differ slightly across the three satisfaction groups, but the distributions overlap heavily. PCA projection conveys the same message from a wider feature space. After the numerical variables are truncated and interpolated, and the category variables are grouped and virtually encoded, the first two main components still show a strong overlap between dissatisfied, neutral and satisfied developers.
 
-This suggests that the main modelling challenge is **weak class separability**. The dataset contains useful signals, but these signals are spread across many predictors rather than forming clear class boundaries. This explains why later models should be compared using Macro F1 and Kappa instead of accuracy alone.
+This shows that the main challenge of modelling is **weak class separability**. The dataset contains useful signals, but these signals are scattered in multiple predictors instead of forming clear class boundaries. This explains why the comparison of subsequent models should use macro F1 values and Kappa coefficients, not just accuracy.
 
 
 ### Data Preprocessing
