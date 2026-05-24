@@ -1295,9 +1295,9 @@ kable(tuning_summary,
   column_spec(7, bold = TRUE)
 ```
 
-**Key findings:** GBM achieved the highest test Macro F1 (`r gbm_res$overall_metrics$Macro_F1`), benefiting from iterative error correction and native handling of mixed feature types. DNN performed comparably (`r dnn_res$overall_metrics$Macro_F1`) — Focal Loss effectively addressed the class imbalance by focusing on hard-to-classify samples. Naive Bayes (`r nb_res$overall_metrics$Macro_F1`) served as a useful lower bound, confirming that the conditional independence assumption is severely violated in this dataset and that more complex models are justified.
+**Key findings:** GBM achieved the highest test Macro F1 (`r gbm_res$overall_metrics$Macro_F1`), benefiting from iterative error correction and native handling of mixed feature types. We effectively alleviated the class imbalance problem by applying the Focal loss function to the DNN model, making it focus on samples that are difficult to classify.DNN performed in test data(`r dnn_res$overall_metrics$Macro_F1`).The Naive Bayes model does not perform well on the test set(`r nb_res$overall_metrics$Macro_F1`).This demonstrates that the features in this dataset are not independent, and also justifies our use of a more complex model to capture non-linear relationships.
 
-<small>*The complete model training and tuning pipeline (`run_all_models.R`, 1239 lines) is included in the foldable code block below for full reproducibility.*</small>
+<small>*You can view the complete data preprocessing and model training/parameter tuning/evaluation process of our project by expanding the collapsed code block below (`run_all_models.R`), which will allow you to reproduce our experiments.*</small>
 
 ```{r run-all-models-full, eval=FALSE, code=readLines("run_all_models.R")}
 ```
@@ -1352,11 +1352,12 @@ ggplot(all_class, aes(x = Class, y = F1, fill = Model)) +
 Based on the evaluation, **Gradient Boosting (GBM)** is selected as the final model:
 
 1. **Highest Macro F1** (`r gbm_res$overall_metrics$Macro_F1`): best balance across all three classes, which is critical given the class imbalance.
-2. **Highest Kappa** (`r gbm_res$overall_metrics$Kappa`): strongest agreement beyond chance among all five models.
-3. **Balanced per-class performance**: achieves reasonable F1 for all classes, including the challenging Dissatisfied minority.
-4. **Interpretability**: variable importance is readily available via GBM, providing actionable domain insights.
+2. **Highest Kappa** (`r gbm_res$overall_metrics$Kappa`): GB has the highest Kappa among the five models, which we believe indicates that GB is the best performing model for random guessing, demonstrating its superior class discrimination.
+3. **GB performed relatively well across all three classes.**: GB not only achieved the highest F1 score in the majority class (Satisfied), but also achieved considerable F1 scores in the two minority classes (Dissatisfied and Neutral). We believe this demonstrates that GB has a strong ability to identify minority classes.
 
-All five models achieve Macro F1 in the 0.44–0.47 range, reflecting the inherent difficulty of predicting subjective job satisfaction from survey features. The relatively narrow performance gap between the simplest useful model (Logistic Regression, `r lr_res$overall_metrics$Macro_F1`) and the best (GBM, `r gbm_res$overall_metrics$Macro_F1`) suggests that the signal-to-noise ratio in the dataset is the primary bottleneck rather than model capacity. Nevertheless, ensemble methods (GBM, RF) consistently outperform linear and probabilistic baselines, and thoughtful imbalance handling — whether via class weights, Focal Loss, or SMOTE — is essential for achieving non-trivial Macro F1 in skewed multi-class settings.
+We found that the macro F1 scores of the five models were all between 0.44 and 0.47, which explains the phenomenon we observed in the PCA plot: the three classes have a high degree of overlap in the feature space, and the first two features have low explanatory power. It's difficult for the model to learn a good classification boundary using only the features provided in the dataset. Despite our numerous optimization attempts, we observed little difference in performance between the simplest and most effective model (logistic regression, 0.4621) and the best model (GBM, 0.4707), indicating that the bottleneck lies in the lack of decisive features rather than model performance. For example, two people with similar features might have one choose neutral while the other chooses satisfied, posing a significant challenge to the model's classification.
+
+Despite these limitations, we are pleased to see that ensemble methods (random forests and gradient boosting) and neural networks outperform simpler models. By addressing class imbalance (adjusting the loss function/adjusting class weights/increasing the minority class weight), we can still significantly improve model performance. If we can obtain richer or more decisive features in the future, we are confident that we can make the model perform even better.
 
 ### Final Results and Conclusions
 
